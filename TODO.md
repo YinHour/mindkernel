@@ -1,6 +1,6 @@
 # MindKernel TODO
 
-_Last updated: 2026-02-24 13:39 (Asia/Shanghai)_
+_Last updated: 2026-02-24 13:43 (Asia/Shanghai)_
 
 ## P0（近期必须推进）
 
@@ -43,8 +43,9 @@ _Last updated: 2026-02-24 13:39 (Asia/Shanghai)_
 
 ## 下一步（建议按顺序执行）
 
-1. **S11（最高优先）** 完成发布候选收口：执行 release_check、补齐 changelog 明细、生成 `v0.1.0-usable-rc1` tag。
-2. 补一轮真实 workspace 的 reflect worker 回放报告（非 fixture），验证吞吐与异常恢复路径。
+1. 补一轮真实 workspace 的 reflect worker 回放报告（非 fixture），验证吞吐与异常恢复路径。
+2. 评估并接入多 worker 租约/锁机制，降低并发执行冲突风险。
+3. 准备 `v0.1.0-usable` 正式标签与发布说明（基于 `v0.1.0-usable-rc1` 验证结果）。
 
 ## 风险追踪
 
@@ -52,7 +53,7 @@ _Last updated: 2026-02-24 13:39 (Asia/Shanghai)_
 - **一致性风险（中）**：Reflect/Opinion evolution 仍属 Partial，治理闭环未完全自动化。
 - **数据风险（中-低）**：已补导入器与回放验证；剩余风险在于线上真实数据规模下的吞吐与异常恢复策略。
 - **外部依赖风险（中）**：LLM 线上调用受 API 可用性/成本影响，尚未接入熔断与降级策略。
-- **节奏风险（中）**：P1 主线已闭环，S10 已完成；若本周内不完成 S11 发布候选收口（tag/runbook/changelog），里程碑仍会后移。
+- **节奏风险（中-低）**：今日计划项已完成并产出 `v0.1.0-usable-rc1`；剩余为真实流量回放与正式发布收口。
 
 MindKernel 记忆治理验收清单 v1（20 条）
 
