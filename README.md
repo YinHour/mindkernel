@@ -38,6 +38,9 @@ python3 tools/validate_recall_quality_v0_1.py
 # 1.2) memory 导入器回放（幂等 + 错误隔离）
 python3 tools/validate_memory_import_v0_1.py
 
+# 1.3) reflect 调度 worker 回放（S7）
+python3 tools/validate_scheduler_worker_v0_1.py
+
 # 2) 一键全链路（M→E→C→D）
 python3 tools/full_path_v0_1.py run-full-path \
   --memory-file data/fixtures/critical-paths/12-full-path-pass.json \
@@ -48,6 +51,9 @@ python3 tools/full_path_v0_1.py run-full-path \
 
 # 3) 产出烟测报告（JSON + Markdown）
 python3 tools/system_smoke_report_v0_1.py
+
+# 4) 发布前总检（S10）
+python3 tools/release_check_v0_1.py --quick --no-strict
 ```
 
 ## 推荐阅读顺序

@@ -56,6 +56,14 @@ jobs:
         run: |
           python3 tools/validate_memory_import_v0_1.py
 
+      - name: Run reflect scheduler worker validation
+        run: |
+          python3 tools/validate_scheduler_worker_v0_1.py
+
+      - name: Run apply compensation validation
+        run: |
+          python3 tools/validate_apply_compensation_v0_1.py
+
       - name: Run ingest tooling validation
         run: |
           python3 tools/validate_ingest_tools_v0_1.py

@@ -74,6 +74,18 @@ python3 tools/persona_confirmation_queue_v0_1.py \
   --plan-file reports/reflect_apply_plan_demo.json \
   --workspace /Users/zhengwang/projects/mindkernel \
   --output reports/reflect_apply_exec_demo.json
+
+# 10.1) 查看/处理补偿队列（C4）
+python3 tools/persona_confirmation_queue_v0_1.py --db data/mindkernel_v0_1.sqlite compensations --status pending
+python3 tools/persona_confirmation_queue_v0_1.py --db data/mindkernel_v0_1.sqlite resolve-compensation --compensation-id <id> --note "manual handled"
+
+# 11) worker loop（S7，默认 dry-run）
+python3 tools/reflect_scheduler_worker_v0_1.py \
+  --db data/mindkernel_v0_1.sqlite \
+  --workspace /Users/zhengwang/projects/mindkernel \
+  --memory-index-db .memory/index.sqlite \
+  --reports-dir reports/reflect_scheduler \
+  --run-once
 ```
 
 ## 4. 对齐点（与设计文档）
@@ -95,6 +107,6 @@ python3 tools/persona_confirmation_queue_v0_1.py \
 
 ## 6. 下一步建议
 
-1. 增加 `worker loop`（定时 pull + 处理 + ack/fail）
-2. 增加并发 worker 的乐观锁/租约机制
-3. 增加与 fixtures 联动的调度回放测试（含 dead_letter）
+1. 增加并发 worker 的乐观锁/租约机制
+2. 增加多类型动作执行器（verify/revalidate/decay）
+3. 增加调度回放中的失败补偿与回滚演练（含 dead_letter）

@@ -21,8 +21,10 @@ from core.persona_confirmation_queue_v0_1 import (  # noqa: E402
     execute_apply_plan,
     get_event,
     init_db,
+    list_compensations,
     list_events,
     mark_status,
+    resolve_compensation,
     resolve_event,
     timeout_scan,
 )
@@ -87,6 +89,14 @@ def main():
     ae.add_argument("--workspace", default=".", help="workspace root for file writeback")
     ae.add_argument("--dry-run", action="store_true")
     ae.add_argument("--output", help="optional apply execution output path")
+
+    cps = sub.add_parser("compensations")
+    cps.add_argument("--status", choices=["pending", "resolved", "skipped"])
+    cps.add_argument("--limit", type=int, default=20)
+
+    rcp = sub.add_parser("resolve-compensation")
+    rcp.add_argument("--compensation-id", required=True)
+    rcp.add_argument("--note", default="")
 
     getp = sub.add_parser("get")
     getp.add_argument("--event-id", required=True)
@@ -171,6 +181,14 @@ def main():
             out_path.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
             out["output"] = str(out_path)
         print(json.dumps(out, ensure_ascii=False, indent=2))
+        return
+
+    if args.cmd == "compensations":
+        print(json.dumps(list_compensations(c, status=args.status, limit=max(1, int(args.limit))), ensure_ascii=False, indent=2))
+        return
+
+    if args.cmd == "resolve-compensation":
+        print(json.dumps(resolve_compensation(c, args.compensation_id, note=args.note), ensure_ascii=False, indent=2))
         return
 
     if args.cmd == "get":

@@ -110,6 +110,8 @@ python3 tools/validate_scenarios_v0_1.py
   - `python3 tools/validate_opinion_conflicts_v0_1.py`
   - `python3 tools/validate_recall_quality_v0_1.py`
   - `python3 tools/validate_memory_import_v0_1.py`
+  - `python3 tools/validate_scheduler_worker_v0_1.py`
+  - `python3 tools/validate_apply_compensation_v0_1.py`
   - `python3 tools/validate_ingest_tools_v0_1.py`
   - `python3 tools/validate_llm_memory_processor_v0_1.py`（mock）
 

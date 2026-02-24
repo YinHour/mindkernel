@@ -74,7 +74,9 @@
 
 29. `06-execution/v0.1.0-usable-execution-plan.md`
     - v0.1.0-usable 从原型到可交付版本的执行规划（S1~S11）
-30. `06-execution/project-consolidation-2026-02-21.md`
+30. `06-execution/release-runbook-v0.1.0-usable.md`
+    - v0.1.0-usable 发布执行手册（pre-check/tag/rollback）
+31. `06-execution/project-consolidation-2026-02-21.md`
     - 项目整理快照（结构、门禁、脚本与 S4 交接点）
 
 ## 维护规则

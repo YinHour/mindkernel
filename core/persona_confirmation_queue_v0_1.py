@@ -111,6 +111,24 @@ def init_db(c: sqlite3.Connection):
         CREATE INDEX IF NOT EXISTS idx_reflect_apply_job
         ON reflect_apply_ledger(job_id, proposal_id);
 
+        CREATE TABLE IF NOT EXISTS reflect_apply_compensations (
+            compensation_id TEXT PRIMARY KEY,
+            idempotency_key TEXT NOT NULL UNIQUE,
+            job_id TEXT NOT NULL,
+            proposal_id TEXT NOT NULL,
+            target_id TEXT NOT NULL,
+            failure_status TEXT NOT NULL,
+            error TEXT,
+            payload_json TEXT NOT NULL,
+            status TEXT NOT NULL,
+            note TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_reflect_apply_comp_status
+        ON reflect_apply_compensations(status, updated_at DESC);
+
         CREATE TABLE IF NOT EXISTS decision_traces (
             id TEXT PRIMARY KEY,
             final_outcome TEXT NOT NULL,
@@ -753,6 +771,103 @@ def _ledger_put(
     c.commit()
 
 
+def _create_compensation(
+    c: sqlite3.Connection,
+    *,
+    idempotency_key: str,
+    cand: dict,
+    res: dict,
+    note: str | None = None,
+) -> dict:
+    t = now_iso()
+    comp_id = f"cmp_{hashlib.sha1(idempotency_key.encode('utf-8')).hexdigest()[:12]}"
+    payload = {
+        "candidate": {
+            "job_id": str(cand.get("job_id") or "job_unknown"),
+            "proposal_id": str(cand.get("proposal_id") or cand.get("id") or ""),
+            "target_id": str(cand.get("target_id") or cand.get("target_type") or ""),
+            "operation": str(cand.get("operation") or "upsert"),
+            "payload": cand.get("payload") if isinstance(cand.get("payload"), dict) else {},
+        },
+        "result": res,
+    }
+
+    c.execute(
+        """
+        INSERT INTO reflect_apply_compensations(
+            compensation_id, idempotency_key, job_id, proposal_id, target_id,
+            failure_status, error, payload_json, status, note, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)
+        ON CONFLICT(idempotency_key) DO UPDATE SET
+            failure_status=excluded.failure_status,
+            error=excluded.error,
+            payload_json=excluded.payload_json,
+            status='pending',
+            note=excluded.note,
+            updated_at=excluded.updated_at
+        """,
+        (
+            comp_id,
+            idempotency_key,
+            payload["candidate"]["job_id"],
+            payload["candidate"]["proposal_id"],
+            payload["candidate"]["target_id"],
+            str(res.get("status") or "failed"),
+            str(res.get("error") or ""),
+            json.dumps(payload, ensure_ascii=False),
+            note,
+            t,
+            t,
+        ),
+    )
+    c.commit()
+    return {"compensation_id": comp_id, "status": "pending"}
+
+
+def list_compensations(c: sqlite3.Connection, status: str | None = None, limit: int = 50) -> list[dict]:
+    if limit < 1:
+        raise ValueError("limit must be >= 1")
+    if status and status not in {"pending", "resolved", "skipped"}:
+        raise ValueError("status must be pending|resolved|skipped")
+
+    if status:
+        rows = c.execute(
+            "SELECT * FROM reflect_apply_compensations WHERE status=? ORDER BY updated_at DESC LIMIT ?",
+            (status, limit),
+        ).fetchall()
+    else:
+        rows = c.execute(
+            "SELECT * FROM reflect_apply_compensations ORDER BY updated_at DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+
+    out = []
+    for r in rows:
+        d = dict(r)
+        d["payload"] = json.loads(d.pop("payload_json") or "{}")
+        out.append(d)
+    return out
+
+
+def resolve_compensation(c: sqlite3.Connection, compensation_id: str, note: str = "") -> dict:
+    row = c.execute(
+        "SELECT * FROM reflect_apply_compensations WHERE compensation_id=?",
+        (compensation_id,),
+    ).fetchone()
+    if not row:
+        raise ValueError(f"compensation not found: {compensation_id}")
+
+    c.execute(
+        "UPDATE reflect_apply_compensations SET status='resolved', note=?, updated_at=? WHERE compensation_id=?",
+        (note, now_iso(), compensation_id),
+    )
+    c.commit()
+
+    out = dict(c.execute("SELECT * FROM reflect_apply_compensations WHERE compensation_id=?", (compensation_id,)).fetchone())
+    out["payload"] = json.loads(out.pop("payload_json") or "{}")
+    return out
+
+
 def _record_apply_governance(c: sqlite3.Connection, cand: dict, res: dict) -> dict:
     risk_tier = str(cand.get("risk_level") or "medium")
     if risk_tier not in {"low", "medium", "high"}:
@@ -807,6 +922,7 @@ def execute_apply_candidates(
     deduped = 0
     skipped = 0
     failed = 0
+    compensation_created = 0
 
     for cand in apply_candidates:
         job_id = str(cand.get("job_id") or "job_unknown")
@@ -863,6 +979,15 @@ def execute_apply_candidates(
                 "status": "skipped_no_payload_path",
             }
             res = _record_apply_governance(c, cand, res)
+            comp = _create_compensation(
+                c,
+                idempotency_key=idem,
+                cand=cand,
+                res=res,
+                note="missing payload.path; manual fix required",
+            )
+            compensation_created += 1
+            res["compensation_id"] = comp["compensation_id"]
             _ledger_put(
                 c,
                 idempotency_key=idem,
@@ -886,6 +1011,15 @@ def execute_apply_candidates(
                 "path": str(out_path),
             }
             res = _record_apply_governance(c, cand, res)
+            comp = _create_compensation(
+                c,
+                idempotency_key=idem,
+                cand=cand,
+                res=res,
+                note="payload.path escaped workspace; blocked for safety",
+            )
+            compensation_created += 1
+            res["compensation_id"] = comp["compensation_id"]
             _ledger_put(
                 c,
                 idempotency_key=idem,
@@ -971,6 +1105,15 @@ def execute_apply_candidates(
                 res = _record_apply_governance(c, cand, res)
             except Exception as gerr:
                 res["governance_error"] = str(gerr)
+            comp = _create_compensation(
+                c,
+                idempotency_key=idem,
+                cand=cand,
+                res=res,
+                note="apply execution failed; manual compensation required",
+            )
+            compensation_created += 1
+            res["compensation_id"] = comp["compensation_id"]
             _ledger_put(
                 c,
                 idempotency_key=idem,
@@ -990,6 +1133,7 @@ def execute_apply_candidates(
         "deduplicated": deduped,
         "skipped": skipped,
         "failed": failed,
+        "compensation_created": compensation_created,
         "results": results,
     }
 

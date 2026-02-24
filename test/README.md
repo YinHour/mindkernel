@@ -25,3 +25,9 @@ python3 -m unittest discover -s test -p "test_*_v0_1.py" -v
   - opinion 冲突聚类与极性判定验证脚本可运行性断言
 - `test_validate_memory_import_v0_1.py`
   - memory JSONL 导入器回放验证脚本可运行性断言
+- `test_validate_scheduler_worker_v0_1.py`
+  - reflect scheduler worker 验证脚本可运行性断言
+- `test_validate_apply_compensation_v0_1.py`
+  - apply 失败补偿验证脚本可运行性断言
+- `test_release_check_v0_1.py`
+  - release_check quick 模式可运行性断言

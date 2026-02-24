@@ -12,7 +12,9 @@ from core.persona_confirmation_queue_v0_1 import (
     execute_apply_plan,
     get_event,
     init_db,
+    list_compensations,
     list_events,
+    resolve_compensation,
     resolve_event,
     timeout_scan,
 )
@@ -152,6 +154,42 @@ class PersonaConfirmationQueueV01Test(unittest.TestCase):
 
             out2 = execute_apply_plan(c, workspace=base, apply_plan=plan, dry_run=False)
             self.assertEqual(out2["deduplicated"], 1)
+
+    def test_apply_exec_creates_compensation_on_failure(self):
+        routed = {
+            "proposals": [
+                {
+                    "proposal_id": "p_fail",
+                    "job_id": "j_comp",
+                    "decision": "auto_applied",
+                    "risk_level": "medium",
+                    "target_type": "opinion",
+                    "target_id": "demo_missing_path",
+                    "operation": "upsert",
+                    "payload": {
+                        "content": "missing path should trigger compensation"
+                    },
+                }
+            ]
+        }
+
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            db = base / "q.sqlite"
+            c = conn(db)
+            init_db(c)
+
+            plan = build_apply_plan(c, routed)
+            out = execute_apply_plan(c, workspace=base, apply_plan=plan, dry_run=False)
+            self.assertEqual(out["failed"], 0)
+            self.assertEqual(out["compensation_created"], 1)
+
+            comps = list_compensations(c, status="pending", limit=10)
+            self.assertEqual(len(comps), 1)
+            cid = comps[0]["compensation_id"]
+
+            resolved = resolve_compensation(c, cid, note="manual handled")
+            self.assertEqual(resolved["status"], "resolved")
 
     def test_timeout_scan(self):
         routed = {

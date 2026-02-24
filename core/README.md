@@ -25,6 +25,7 @@
   - 支持从 routed proposals 入队、待确认查询、人工决策回写、超时关闭
   - 支持 `apply_plan` 与 `apply_exec`（仅放行 auto_applied + human approved，含幂等账本）
   - `apply_exec` 写回时同步产出 DecisionTrace + AuditEvent
+  - 失败路径会进入 `reflect_apply_compensations`（pending -> resolved）补偿队列
 
 - `memory_importer_v0_1.py`
   - memory JSONL 导入核心逻辑

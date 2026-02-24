@@ -20,6 +20,8 @@
   - 到期调度原型（enqueue/pull/ack/fail/stats）
   - Agent-first 提案闸门路由（`route-proposals`，支持 low/medium/high 分流与 medium 抽检）
   - `route-proposals` 的核心逻辑已抽取到 `core/reflect_gate_v0_1.py`
+- `reflect_scheduler_worker_v0_1.py`
+  - reflect 作业 worker loop（pull -> reflect dry-run -> route -> queue -> apply-plan/apply-exec -> ack/fail）
 - `validate_scenarios_v0_1.py`
   - fixtures + 业务断言校验
 - `system_smoke_report_v0_1.py`
@@ -44,6 +46,7 @@
 - `persona_confirmation_queue_v0_1.py`
   - 人格冲突确认队列 CLI（enqueue/list/ask/resolve/timeout-scan/apply-plan/apply-exec）
   - `apply-exec` 写回时会同步产出 DecisionTrace + AuditEvent，并写入幂等账本
+  - 支持补偿队列命令：`compensations` / `resolve-compensation`
   - 核心逻辑在 `core/persona_confirmation_queue_v0_1.py`
 - `llm_memory_processor_v0_1.py`
   - 核心对象 `LLMMemoryProcessor`：调用外部 LLM（OpenAI-compatible）做记忆抽取，输出 memory.schema 兼容对象
@@ -51,6 +54,12 @@
   - 校验迁移与会话解析链路（`memory.md` dry-run + session->memory JSONL + schema 校验）
 - `validate_memory_import_v0_1.py`
   - 校验 memory JSONL 导入器（幂等回放 + 错误隔离 + 导入统计）
+- `validate_scheduler_worker_v0_1.py`
+  - 校验 reflect scheduler worker（到期拉取、执行链路、ack/fail、产物落盘）
+- `validate_apply_compensation_v0_1.py`
+  - 校验 apply 失败补偿队列（生成 pending compensation + 人工 resolved）
+- `release_check_v0_1.py`
+  - 发布前总检聚合脚本（输出 release_check JSON/Markdown 报告）
 - `validate_llm_memory_processor_v0_1.py`
   - 校验 LLM 记忆处理核心对象（mock backend + schema 校验）
 

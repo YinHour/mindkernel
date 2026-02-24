@@ -1,6 +1,6 @@
 # MindKernel TODO
 
-_Last updated: 2026-02-24 13:09 (Asia/Shanghai)_
+_Last updated: 2026-02-24 13:39 (Asia/Shanghai)_
 
 ## P0（近期必须推进）
 
@@ -22,10 +22,13 @@ _Last updated: 2026-02-24 13:09 (Asia/Shanghai)_
   - [x] 已接入 reflect apply 计划生成：仅放行 `auto_applied + human approved`，其余进入 blocked 队列
   - [x] 已接入 reflect apply 执行：`apply-exec` 按计划写回并落幂等账本（重复执行去重）
   - [x] `apply-exec` 已联动输出 DecisionTrace + AuditEvent（每条写回可追溯）
+  - [x] 已接入 reflect scheduler worker loop（`reflect_scheduler_worker_v0_1.py`，默认 dry-run）
+  - [x] 已补 C4 失败补偿队列（`reflect_apply_compensations` + `compensations/resolve-compensation`）
 - [x] 建立 opinion 冲突聚类与更稳健的极性判定（`opinion_conflict_groups` + `validate_opinion_conflicts_v0_1.py`）
 - [x] 增加回放测试：验证 recall fact-pack 对 M→E 输入质量的影响（`validate_recall_quality_v0_1.py`）
 - [x] 冻结数据入口契约（ingest contract，S4：`docs/02-design/ingest-contract-v0.1.md`）
 - [x] 补 `memory JSONL -> objects` 导入器与幂等回放验证（S5/S6：`import_memory_objects_v0_1.py` + `validate_memory_import_v0_1.py`）
+- [x] 增加发布前总检脚本雏形（S10：`release_check_v0_1.py`，输出 release check JSON/Markdown）
 
 ## P2（后续演进）
 
@@ -40,10 +43,8 @@ _Last updated: 2026-02-24 13:09 (Asia/Shanghai)_
 
 ## 下一步（建议按顺序执行）
 
-1. **S7（最高优先）** 把 reflect 计划链路接入定时调度（scheduler worker loop）并补 CI 回归（补齐执行层）。
-2. 为 apply-exec 增加失败补偿/回滚策略（对应 C4），避免写回失败后状态悬空。
-3. 启动 S10 发布前总检脚本雏形（release_check_v0_1.py），为 S11 打包做门禁准备。
-4. 启动 S11 发布准备（changelog/tag/runbook），形成 `v0.1.0-usable` 候选包。
+1. **S11（最高优先）** 完成发布候选收口：执行 release_check、补齐 changelog 明细、生成 `v0.1.0-usable-rc1` tag。
+2. 补一轮真实 workspace 的 reflect worker 回放报告（非 fixture），验证吞吐与异常恢复路径。
 
 ## 风险追踪
 
@@ -51,7 +52,7 @@ _Last updated: 2026-02-24 13:09 (Asia/Shanghai)_
 - **一致性风险（中）**：Reflect/Opinion evolution 仍属 Partial，治理闭环未完全自动化。
 - **数据风险（中-低）**：已补导入器与回放验证；剩余风险在于线上真实数据规模下的吞吐与异常恢复策略。
 - **外部依赖风险（中）**：LLM 线上调用受 API 可用性/成本影响，尚未接入熔断与降级策略。
-- **节奏风险（中）**：P1 主线已基本闭环，剩余 S7/S10/S11 偏工程收口；若本周内不接入 scheduler 执行层与发布总检，里程碑仍会后移。
+- **节奏风险（中）**：P1 主线已闭环，S10 已完成；若本周内不完成 S11 发布候选收口（tag/runbook/changelog），里程碑仍会后移。
 
 MindKernel 记忆治理验收清单 v1（20 条）
 
