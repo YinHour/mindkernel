@@ -27,7 +27,7 @@
 ## 快速开始
 
 ```bash
-cd /Users/zhengwang/projects/mindkernel
+cd ./mindkernel
 
 # 1) 全量关键路径校验
 python3 tools/validate_scenarios_v0_1.py
