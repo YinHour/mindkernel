@@ -23,3 +23,5 @@ python3 -m unittest discover -s test -p "test_*_v0_1.py" -v
   - recall 质量基线校验脚本可运行性与核心阈值断言
 - `test_validate_opinion_conflicts_v0_1.py`
   - opinion 冲突聚类与极性判定验证脚本可运行性断言
+- `test_validate_memory_import_v0_1.py`
+  - memory JSONL 导入器回放验证脚本可运行性断言

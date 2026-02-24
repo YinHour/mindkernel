@@ -34,45 +34,47 @@
     - Markdown 规范源 + 派生索引架构草案
 12. `02-design/retain-recall-reflect-spec-v0.1.md`
     - retain/recall/reflect 语法与接口规范草案
-13. `03-validation/e2e-scenarios-v0.1.md`
+13. `02-design/ingest-contract-v0.1.md`
+    - memory JSONL -> objects 导入契约（S4 冻结）
+14. `03-validation/e2e-scenarios-v0.1.md`
     - 端到端验收场景
-14. `03-validation/validation-critical-paths-v0.1.md`
+15. `03-validation/validation-critical-paths-v0.1.md`
     - v0.1 fixtures + 校验脚本的关键路径覆盖说明
-15. `03-validation/system-smoke-report-v0.1.md`
+16. `03-validation/system-smoke-report-v0.1.md`
     - 系统烟测报告产出与解读方式
-16. `04-prototypes/memory-index-prototype-v0.1.md`
+17. `04-prototypes/memory-index-prototype-v0.1.md`
     - retain/recall/reflect 索引原型说明
-17. `04-prototypes/scheduler-prototype-v0.1.md`
+18. `04-prototypes/scheduler-prototype-v0.1.md`
     - 调度器接口的本地可运行原型说明
-18. `04-prototypes/memory-experience-prototype-v0.1.md`
+19. `04-prototypes/memory-experience-prototype-v0.1.md`
     - 记忆到经验路径的本地可运行原型说明
-19. `04-prototypes/experience-cognition-prototype-v0.1.md`
+20. `04-prototypes/experience-cognition-prototype-v0.1.md`
     - 经验到认知路径（含 Persona Gate 最小实现）
-20. `04-prototypes/cognition-decision-prototype-v0.1.md`
+21. `04-prototypes/cognition-decision-prototype-v0.1.md`
     - Cognition→DecisionTrace 最小链路说明
-21. `04-prototypes/full-path-prototype-v0.1.md`
+22. `04-prototypes/full-path-prototype-v0.1.md`
     - Memory→Experience→Cognition→Decision 一体化最小闭环说明
-22. `04-prototypes/llm-memory-processor-v0.1.md`
+23. `04-prototypes/llm-memory-processor-v0.1.md`
     - 外部 LLM 记忆处理核心对象（抽取为 memory.schema 兼容对象）
 
 ## 数据契约草案（与主规范配套）
 
-23. `../schemas/README.md`
+24. `../schemas/README.md`
     - schema 草案索引与维护说明
-24. `../schemas/*.schema.json`
+25. `../schemas/*.schema.json`
     - `common-temporal` / `persona` / `memory` / `experience` / `cognition` / `decision-trace` / `audit-event`
 
 ## 归档文档（只读）
 
-25. `../archive/requirements-and-architecture.legacy.md`
-26. `../archive/design.legacy.md`
-27. `../archive/memory-entry.schema.legacy.json`
+26. `../archive/requirements-and-architecture.legacy.md`
+27. `../archive/design.legacy.md`
+28. `../archive/memory-entry.schema.legacy.json`
 
 ## 执行计划
 
-28. `06-execution/v0.1.0-usable-execution-plan.md`
+29. `06-execution/v0.1.0-usable-execution-plan.md`
     - v0.1.0-usable 从原型到可交付版本的执行规划（S1~S11）
-29. `06-execution/project-consolidation-2026-02-21.md`
+30. `06-execution/project-consolidation-2026-02-21.md`
     - 项目整理快照（结构、门禁、脚本与 S4 交接点）
 
 ## 维护规则

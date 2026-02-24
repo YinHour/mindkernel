@@ -7,14 +7,18 @@ on:
       - "schemas/**"
       - "docs/**"
       - "data/fixtures/**"
+      - "core/**"
       - "tools/**"
+      - "test/**"
       - ".github/workflows/critical-path-validation.yml"
   pull_request:
     paths:
       - "schemas/**"
       - "docs/**"
       - "data/fixtures/**"
+      - "core/**"
       - "tools/**"
+      - "test/**"
       - ".github/workflows/critical-path-validation.yml"
   workflow_dispatch:
 
@@ -47,6 +51,10 @@ jobs:
       - name: Run recall quality baseline validation
         run: |
           python3 tools/validate_recall_quality_v0_1.py
+
+      - name: Run memory import replay validation
+        run: |
+          python3 tools/validate_memory_import_v0_1.py
 
       - name: Run ingest tooling validation
         run: |

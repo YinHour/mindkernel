@@ -36,6 +36,8 @@
   - recall 质量回放基线（accuracy/recall/noise + M→E 输入质量）
 - `migrate_memory_md_to_objects_v0_1.py`
   - `memory.md` 到 memory objects 的安全迁移 dry-run（行级 source_ref + 敏感项分级）
+- `import_memory_objects_v0_1.py`
+  - `memory JSONL -> objects` 导入器（upsert/insert-only，行级错误隔离，幂等 NOOP）
 - `parse_session_jsonl_v0_1.py`
   - 解析 OpenClaw session JSONL，产出 memory-event 候选（directive/request/milestone/discovery，可选 tool_call）
   - 核心解析逻辑已抽取到 `core/session_memory_parser_v0_1.py`
@@ -47,6 +49,8 @@
   - 核心对象 `LLMMemoryProcessor`：调用外部 LLM（OpenAI-compatible）做记忆抽取，输出 memory.schema 兼容对象
 - `validate_ingest_tools_v0_1.py`
   - 校验迁移与会话解析链路（`memory.md` dry-run + session->memory JSONL + schema 校验）
+- `validate_memory_import_v0_1.py`
+  - 校验 memory JSONL 导入器（幂等回放 + 错误隔离 + 导入统计）
 - `validate_llm_memory_processor_v0_1.py`
   - 校验 LLM 记忆处理核心对象（mock backend + schema 校验）
 
