@@ -21,3 +21,5 @@ python3 -m unittest discover -s test -p "test_*_v0_1.py" -v
   - 人格冲突确认队列（入队、去重、超时关闭、人工决策、apply-plan、apply-exec 幂等）
 - `test_validate_recall_quality_v0_1.py`
   - recall 质量基线校验脚本可运行性与核心阈值断言
+- `test_validate_opinion_conflicts_v0_1.py`
+  - opinion 冲突聚类与极性判定验证脚本可运行性断言

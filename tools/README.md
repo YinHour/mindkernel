@@ -30,6 +30,8 @@
   - 离线记忆索引草案（retain/recall/reflect，含 opinion 置信度演化）
 - `validate_memory_index_v0_1.py`
   - 记忆索引演化与写回验证脚本
+- `validate_opinion_conflicts_v0_1.py`
+  - opinion 冲突聚类与极性判定验证脚本（冲突簇 + mandatory_review 建议）
 - `validate_recall_quality_v0_1.py`
   - recall 质量回放基线（accuracy/recall/noise + M→E 输入质量）
 - `migrate_memory_md_to_objects_v0_1.py`

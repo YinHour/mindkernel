@@ -106,7 +106,7 @@
 | Retain（`## Retain` 解析 + 入库） | MR-2, CR-2, FR-3, FR-18, NFR-1 | Full | `retain-recall-reflect-spec-v0.1.md` §1；`tools/memory_index_v0_1.py reindex` | `memory-index-prototype-v0.1.md` 用例 + `validate_memory_index_v0_1.py` |
 | Recall（fact-pack + source_ref） | MR-2, CR-2, FR-3, FR-17, NFR-1, NFR-2 | Full | `retain-recall-reflect-spec-v0.1.md` §2；`tools/memory_index_v0_1.py recall` | 原型命令回放（`memory-index-prototype-v0.1.md`）+ `validate_recall_quality_v0_1.py` |
 | Reflect（建议包 + 可选 writeback） | MR-5, FR-10, FR-12, FR-21, NFR-8, NFR-15 | Partial | `retain-recall-reflect-spec-v0.1.md` §3；`tools/memory_index_v0_1.py reflect --writeback` | `validate_memory_index_v0_1.py` 校验 entities/opinions 写回 |
-| Opinion 置信度演化（support/contradict） | MR-7, CR-3, FR-12, FR-15, NFR-2, NFR-8 | Partial | `retain-recall-reflect-spec-v0.1.md` §5；`tools/memory_index_v0_1.py` opinions_state 更新 | `validate_memory_index_v0_1.py` 校验 `support_count/contradict_count/confidence` |
+| Opinion 置信度演化（support/contradict）+ 冲突聚类 | MR-7, CR-3, FR-12, FR-15, NFR-2, NFR-8 | Partial | `retain-recall-reflect-spec-v0.1.md` §5；`tools/memory_index_v0_1.py` opinions_state 更新 + `opinion_conflict_groups` | `validate_memory_index_v0_1.py` + `validate_opinion_conflicts_v0_1.py` |
 
 专项结论（v0.1）：
 - Retain / Recall：可作为“记忆证据层”进入主链路，具备最小可验收能力。

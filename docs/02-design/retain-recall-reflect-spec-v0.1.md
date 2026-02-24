@@ -67,6 +67,7 @@
 {
   "entity_summaries": [...],
   "opinion_candidates": [...],
+  "opinion_conflict_groups": [...],
   "generated_at": "..."
 }
 ```
@@ -105,9 +106,12 @@
   - support：`confidence += 0.05`（封顶 `0.99`）
   - contradict：`confidence -= 0.08`（保底 `0.05`）
 - 审计字段：`support_count`、`contradict_count`、`last_event`、`evidence_refs`。
+- reflect 会生成 `opinion_conflict_groups`（按 `entities + topic_signature` 聚类），
+  当同簇出现正负极性并存时标记 `has_conflict=true`，建议 `mandatory_review`。
 
 ## 6. 版本计划
 
 - v0.1：规则抽取 + 词法 recall + reflect 建议
 - v0.1.1：加入 opinion 置信度演化 + writeback
-- v0.2：冲突聚类与更精细置信度更新 + 自动化 reflect 作业
+- v0.1.2：加入冲突聚类与极性判定增强（`opinion_conflict_groups`）
+- v0.2：更精细置信度更新 + 自动化 reflect 作业

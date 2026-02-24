@@ -69,6 +69,50 @@ STOP_WORDS = {
     "did",
 }
 
+POSITIVE_WORDS = {
+    "prefer",
+    "prefers",
+    "like",
+    "likes",
+    "support",
+    "supports",
+    "stable",
+    "useful",
+    "good",
+    "喜欢",
+    "偏好",
+    "支持",
+    "稳定",
+    "有用",
+    "推荐",
+    "赞成",
+    "靠谱",
+}
+
+NEGATIVE_POLARITY_WORDS = {
+    "dislike",
+    "dislikes",
+    "reject",
+    "rejects",
+    "avoid",
+    "avoids",
+    "bad",
+    "unstable",
+    "oppose",
+    "opposes",
+    "反对",
+    "拒绝",
+    "讨厌",
+    "不喜欢",
+    "不偏好",
+    "不支持",
+    "不稳定",
+    "不要",
+    "不推荐",
+}
+
+POLARITY_STOP = POSITIVE_WORDS | NEGATIVE_POLARITY_WORDS | NEG_WORDS
+
 SUPPORT_DELTA = 0.05
 CONTRADICT_DELTA = 0.08
 
@@ -188,6 +232,83 @@ def opinion_signature(text: str) -> str:
         t = _normalize_signature_token(t)
         if t:
             cleaned.append(t)
+    return " ".join(cleaned)
+
+
+def detect_polarity(text: str) -> dict:
+    tokens = tokenize_text(text)
+    pos = 0
+    neg = 0
+    negate_next = False
+
+    for tok in tokens:
+        t = _normalize_signature_token(tok)
+        if not t:
+            continue
+
+        if t in NEG_WORDS:
+            negate_next = True
+            continue
+
+        if t in NEGATIVE_POLARITY_WORDS:
+            if negate_next:
+                pos += 1
+                negate_next = False
+            else:
+                neg += 1
+            continue
+
+        if t in POSITIVE_WORDS:
+            if negate_next:
+                neg += 1
+                negate_next = False
+            else:
+                pos += 1
+            continue
+
+        if any(t.startswith(prefix) for prefix in ["不", "没", "无"]) and len(t) >= 2:
+            tail = t[1:]
+            tail = _normalize_signature_token(tail)
+            if tail in POSITIVE_WORDS:
+                neg += 1
+                continue
+            if tail in NEGATIVE_POLARITY_WORDS:
+                pos += 1
+                continue
+
+        negate_next = False
+
+    score = pos - neg
+    if score >= 1:
+        label = "positive"
+    elif score <= -1:
+        label = "negative"
+    else:
+        label = "neutral"
+
+    confidence = abs(score) / max(1, pos + neg)
+    return {
+        "label": label,
+        "score": score,
+        "confidence": round(min(1.0, max(0.0, confidence)), 4),
+        "pos_hits": pos,
+        "neg_hits": neg,
+    }
+
+
+def opinion_topic_signature(text: str) -> str:
+    tokens = tokenize_text(text)
+    cleaned = []
+    for t in tokens:
+        if t in STOP_WORDS or t in POLARITY_STOP:
+            continue
+        t = t.replace("不", "").replace("没", "").replace("无", "")
+        t = _normalize_signature_token(t)
+        if t and t not in POLARITY_STOP:
+            cleaned.append(t)
+
+    if not cleaned:
+        return opinion_signature(text)
     return " ".join(cleaned)
 
 
@@ -489,6 +610,70 @@ def _upsert_autogen_block(path: Path, title: str, block_lines: list[str]):
     path.write_text(new_content)
 
 
+def cluster_opinion_conflicts(opinion_candidates: list[dict], limit_groups: int = 20):
+    groups: dict[str, dict] = {}
+
+    for op in opinion_candidates:
+        entities = sorted(op.get("entities", []))
+        entities_str = " ".join(entities)
+        statement = (op.get("content") or "").strip()
+        if not statement:
+            continue
+
+        topic_sig = opinion_topic_signature(statement)
+        if not topic_sig:
+            continue
+
+        pol = detect_polarity(statement)
+        key = f"{entities_str}|{topic_sig}"
+
+        if key not in groups:
+            gid = f"ocg_{sha1_text(key)[:12]}"
+            groups[key] = {
+                "group_id": gid,
+                "entities": entities,
+                "topic_signature": topic_sig,
+                "polarity_counts": {"positive": 0, "negative": 0, "neutral": 0},
+                "items": [],
+            }
+
+        g = groups[key]
+        label = pol["label"]
+        g["polarity_counts"][label] += 1
+        g["items"].append(
+            {
+                "label": label,
+                "score": pol["score"],
+                "confidence": float(op.get("confidence", 0.7)),
+                "source_ref": op.get("source_ref"),
+                "observed_date": op.get("observed_date"),
+                "content": statement,
+            }
+        )
+
+    out = []
+    for g in groups.values():
+        pos = int(g["polarity_counts"].get("positive", 0))
+        neg = int(g["polarity_counts"].get("negative", 0))
+        total = len(g["items"])
+        has_conflict = pos > 0 and neg > 0
+        conflict_score = round((min(pos, neg) / max(1, total)), 4) if has_conflict else 0.0
+
+        g["total"] = total
+        g["has_conflict"] = has_conflict
+        g["conflict_score"] = conflict_score
+        g["recommended_action"] = "mandatory_review" if has_conflict else "auto_merge"
+        g["items"] = sorted(
+            g["items"],
+            key=lambda x: (x.get("observed_date") or "", x.get("source_ref") or ""),
+            reverse=True,
+        )[:8]
+        out.append(g)
+
+    out.sort(key=lambda x: (x["has_conflict"], x["conflict_score"], x["total"]), reverse=True)
+    return out[:limit_groups]
+
+
 def evolve_opinions(c: sqlite3.Connection, opinion_candidates: list[dict]):
     # deterministic order: observed_date then source_ref
     def _key(x):
@@ -502,7 +687,13 @@ def evolve_opinions(c: sqlite3.Connection, opinion_candidates: list[dict]):
             continue
 
         sig = opinion_signature(statement)
-        neg = 1 if has_negation(tokenize_text(statement)) else 0
+        pol = detect_polarity(statement)
+        if pol["label"] == "negative":
+            neg = 1
+        elif pol["label"] == "positive":
+            neg = 0
+        else:
+            neg = 1 if has_negation(tokenize_text(statement)) else 0
 
         row = c.execute(
             "SELECT * FROM opinions_state WHERE signature=? AND entities=?",
@@ -651,6 +842,22 @@ def apply_reflect_writeback(workspace: Path, reflection: dict, max_per_entity: i
                 f"- (c={op['confidence']:.2f}) {entities} {op['content']} _(source: {op['source_ref']})_".strip()
             )
 
+    conflict_groups = [g for g in reflection.get("opinion_conflict_groups", []) if g.get("has_conflict")]
+    if conflict_groups:
+        op_lines.append("")
+        op_lines.append("## Conflict Clusters")
+        for g in conflict_groups[:8]:
+            entities = " ".join(f"@{e}" for e in g.get("entities", []))
+            pc = g.get("polarity_counts", {})
+            op_lines.append(
+                f"- [{g.get('group_id')}] {entities} topic=`{g.get('topic_signature')}` +{pc.get('positive',0)}/-{pc.get('negative',0)}"
+            )
+            top = g.get("items", [])[:2]
+            for item in top:
+                op_lines.append(
+                    f"  - [{item.get('label')}] {item.get('content')} _(source: {item.get('source_ref')})_"
+                )
+
     _upsert_autogen_block(opinions_path, "Opinions", op_lines)
     written.append(str(opinions_path.relative_to(workspace)))
 
@@ -692,6 +899,7 @@ def cmd_reflect(
                 }
             )
         if r["kind"] == "O":
+            pol = detect_polarity(r["content"])
             opinion_candidates.append(
                 {
                     "entities": entities,
@@ -699,6 +907,9 @@ def cmd_reflect(
                     "confidence": r["confidence"],
                     "source_ref": r["source_ref"],
                     "observed_date": r["observed_date"],
+                    "topic_signature": opinion_topic_signature(r["content"]),
+                    "polarity": pol["label"],
+                    "polarity_score": pol["score"],
                 }
             )
 
@@ -712,9 +923,12 @@ def cmd_reflect(
             }
         )
 
+    conflict_groups = cluster_opinion_conflicts(opinion_candidates, limit_groups=max(10, max_opinions))
+
     out = {
         "entity_summaries": entity_summaries,
         "opinion_candidates": opinion_candidates[:50],
+        "opinion_conflict_groups": conflict_groups,
         "generated_at": now_iso(),
     }
 

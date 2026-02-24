@@ -35,7 +35,13 @@ python3 tools/memory_index_v0_1.py \
   reflect --since-days 30 --writeback
 ```
 
-## 4. 写回行为
+`reflect` 输出中新增：
+- `opinion_conflict_groups`：按 `entities + topic_signature` 聚类的冲突簇
+- 每个簇包含 `polarity_counts`、`has_conflict`、`conflict_score`、`recommended_action`
+
+当 `has_conflict=true` 时，建议动作为 `mandatory_review`，可直接接入确认队列。
+
+## 4. 反思输出与写回行为
 
 当使用 `reflect --writeback`：
 - 生成 `bank/entities/<slug>.md`
