@@ -1,0 +1,51 @@
+{
+  "workspace_fixture": "data/fixtures/memory-workspace",
+  "cases": [
+    {
+      "id": "lexical_pipeline_audit",
+      "query": "pipeline audit trails",
+      "limit": 5,
+      "expected_source_refs": ["memory/2026-02-20.md#L6"],
+      "min_hits": 1,
+      "max_noise": 0.8
+    },
+    {
+      "id": "entity_kind_cli_skeleton",
+      "query": "CLI skeleton reindex recall reflect commands",
+      "kind": "B",
+      "entity": "MindKernel",
+      "limit": 5,
+      "expected_source_refs": ["memory/2026-02-21.md#L7"],
+      "min_hits": 1,
+      "max_noise": 0.5
+    },
+    {
+      "id": "opinion_user_preference",
+      "query": "Prefers concise progress summaries clear next actions",
+      "kind": "O",
+      "entity": "User",
+      "limit": 5,
+      "expected_source_refs": ["memory/2026-02-20.md#L8"],
+      "min_hits": 1,
+      "max_noise": 0.7
+    },
+    {
+      "id": "time_filter_recent_none",
+      "query": "pipeline audit trails",
+      "since_days": 1,
+      "limit": 5,
+      "expect_count": 0,
+      "max_noise": 0.0
+    },
+    {
+      "id": "world_fact_memory_index",
+      "query": "Retain Recall Reflect draft offline use",
+      "kind": "W",
+      "entity": "MemoryIndex",
+      "limit": 5,
+      "expected_source_refs": ["memory/2026-02-21.md#L6"],
+      "min_hits": 1,
+      "max_noise": 0.5
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # MindKernel TODO
 
-_Last updated: 2026-02-24 12:38 (Asia/Shanghai)_
+_Last updated: 2026-02-24 12:42 (Asia/Shanghai)_
 
 ## P0（近期必须推进）
 
@@ -23,7 +23,7 @@ _Last updated: 2026-02-24 12:38 (Asia/Shanghai)_
   - [x] 已接入 reflect apply 执行：`apply-exec` 按计划写回并落幂等账本（重复执行去重）
   - [x] `apply-exec` 已联动输出 DecisionTrace + AuditEvent（每条写回可追溯）
 - [ ] 建立 opinion 冲突聚类与更稳健的极性判定（当前否定词启发式）
-- [ ] 增加回放测试：验证 recall fact-pack 对 M→E 输入质量的影响
+- [x] 增加回放测试：验证 recall fact-pack 对 M→E 输入质量的影响（`validate_recall_quality_v0_1.py`）
 - [ ] 补 `memory JSONL -> objects` 导入器与幂等回放验证
 
 ## P2（后续演进）
@@ -39,10 +39,10 @@ _Last updated: 2026-02-24 12:38 (Asia/Shanghai)_
 
 ## 下一步（建议按顺序执行）
 
-1. **P1-2（最高优先）** 增加 recall 质量回放基线（accuracy / recall / noise），并形成固定回归用例。
-2. **P1-3** 增强 opinion 冲突聚类与极性判定（替换纯否定词启发式）。
-3. **P1-4** 补 `memory JSONL -> objects` 导入器与幂等回放验证，闭合迁移链路。
-4. 把 reflect 计划链路接入定时调度（scheduler worker loop）并补 CI 回归。
+1. **P1-3（最高优先）** 增强 opinion 冲突聚类与极性判定（替换纯否定词启发式）。
+2. **P1-4** 补 `memory JSONL -> objects` 导入器与幂等回放验证，闭合迁移链路。
+3. 把 reflect 计划链路接入定时调度（scheduler worker loop）并补 CI 回归。
+4. 为 apply-exec 增加失败补偿/回滚策略（对应 C4）。
 
 ## 风险追踪
 

@@ -30,6 +30,8 @@
   - 离线记忆索引草案（retain/recall/reflect，含 opinion 置信度演化）
 - `validate_memory_index_v0_1.py`
   - 记忆索引演化与写回验证脚本
+- `validate_recall_quality_v0_1.py`
+  - recall 质量回放基线（accuracy/recall/noise + M→E 输入质量）
 - `migrate_memory_md_to_objects_v0_1.py`
   - `memory.md` 到 memory objects 的安全迁移 dry-run（行级 source_ref + 敏感项分级）
 - `parse_session_jsonl_v0_1.py`

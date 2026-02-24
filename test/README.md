@@ -19,3 +19,5 @@ python3 -m unittest discover -s test -p "test_*_v0_1.py" -v
   - Memory->Experience ingest/promote 核心路径
 - `test_persona_confirmation_queue_v0_1.py`
   - 人格冲突确认队列（入队、去重、超时关闭、人工决策、apply-plan、apply-exec 幂等）
+- `test_validate_recall_quality_v0_1.py`
+  - recall 质量基线校验脚本可运行性与核心阈值断言

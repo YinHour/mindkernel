@@ -104,7 +104,7 @@
 | 能力 | 覆盖需求 | Coverage | 设计/实现落点 | 验证证据 |
 |---|---|---|---|---|
 | Retain（`## Retain` 解析 + 入库） | MR-2, CR-2, FR-3, FR-18, NFR-1 | Full | `retain-recall-reflect-spec-v0.1.md` §1；`tools/memory_index_v0_1.py reindex` | `memory-index-prototype-v0.1.md` 用例 + `validate_memory_index_v0_1.py` |
-| Recall（fact-pack + source_ref） | MR-2, CR-2, FR-3, FR-17, NFR-1, NFR-2 | Full | `retain-recall-reflect-spec-v0.1.md` §2；`tools/memory_index_v0_1.py recall` | 原型命令回放（`memory-index-prototype-v0.1.md`） |
+| Recall（fact-pack + source_ref） | MR-2, CR-2, FR-3, FR-17, NFR-1, NFR-2 | Full | `retain-recall-reflect-spec-v0.1.md` §2；`tools/memory_index_v0_1.py recall` | 原型命令回放（`memory-index-prototype-v0.1.md`）+ `validate_recall_quality_v0_1.py` |
 | Reflect（建议包 + 可选 writeback） | MR-5, FR-10, FR-12, FR-21, NFR-8, NFR-15 | Partial | `retain-recall-reflect-spec-v0.1.md` §3；`tools/memory_index_v0_1.py reflect --writeback` | `validate_memory_index_v0_1.py` 校验 entities/opinions 写回 |
 | Opinion 置信度演化（support/contradict） | MR-7, CR-3, FR-12, FR-15, NFR-2, NFR-8 | Partial | `retain-recall-reflect-spec-v0.1.md` §5；`tools/memory_index_v0_1.py` opinions_state 更新 | `validate_memory_index_v0_1.py` 校验 `support_count/contradict_count/confidence` |
 
@@ -120,7 +120,7 @@
 4. 探索预算周期统计与“学习停滞事件”告警（CR-8）
 5. 调度器实现层的吞吐与延迟基准（NFR-14）
 6. Reflect 自动作业接入 scheduler（默认 dry-run + 人工确认写回）
-7. Recall 对 M→E 输入质量的回放评估基线（准确率/召回率/噪声率）
+7. Recall 基线持续回归（阈值漂移告警与样本扩充）
 
 ## 8. 维护方式
 

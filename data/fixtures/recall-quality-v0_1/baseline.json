@@ -1,0 +1,10 @@
+{
+  "version": "v0.1",
+  "description": "Recall quality baseline thresholds for fixed replay cases.",
+  "thresholds": {
+    "min_accuracy": 0.8,
+    "min_macro_recall": 0.8,
+    "max_macro_noise": 0.75,
+    "min_me_input_valid_rate": 1.0
+  }
+}
