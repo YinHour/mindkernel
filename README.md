@@ -41,6 +41,11 @@ python3 tools/validation/validate_memory_import_v0_1.py
 # 1.3) reflect 调度 worker 回放（S7）
 python3 tools/validation/validate_scheduler_worker_v0_1.py
 
+# 1.4) 并发与治理执行层验证
+python3 tools/validation/validate_scheduler_multi_worker_lock_v0_1.py
+python3 tools/validation/validate_temporal_governance_worker_v0_1.py
+python3 tools/validation/validate_scheduler_workspace_replay_v0_1.py
+
 # 2) 一键全链路（M→E→C→D）
 python3 tools/pipeline/full_path_v0_1.py run-full-path \
   --memory-file data/fixtures/critical-paths/12-full-path-pass.json \
