@@ -1,6 +1,6 @@
 # MindKernel TODO
 
-_Last updated: 2026-02-26 13:03 (Asia/Shanghai)_
+_Last updated: 2026-02-26 13:14 (Asia/Shanghai)_
 
 ## P0（近期必须推进）
 
@@ -48,19 +48,20 @@ _Last updated: 2026-02-26 13:03 (Asia/Shanghai)_
 - [x] R3 已完成：temporal worker 扩展 `verify/revalidate` 并通过 `validate_temporal_verify_revalidate_v0_1.py`。
 - [x] R5 已完成：新增吞吐/延迟 benchmark 脚本（`benchmark_scheduler_throughput_v0_1.py`）与验证脚本。
 - [x] R6 已完成：新增向量检索就绪度评估脚本（`evaluate_vector_retrieval_readiness_v0_1.py`），当前决策 `NO_GO_KEEP_FTS`。
+- [x] 已完成本轮稳定化代码推送（`main` 更新到 `faf3fd4`）。
+- [x] 已新增 v0.1.1 发布手册与周报定时 workflow，进入运行期观测阶段。
 
-## 下一步（建议按顺序执行）
+## 下一步（运行期）
 
-> 参考：`docs/06-execution/v0.1.1-stabilization-plan.md`（R1~R6）
+> 参考：`docs/06-execution/release-runbook-v0.1.1-stabilized.md`
 
-1. 汇总并推送本轮 R2~R6 代码到远端（待用户确认外部动作）。
-2. 在真实负载上连续跑 1 周 weekly governance report，建立趋势基线（含异常阈值）。
-3. 按 `NO_GO_KEEP_FTS` 结论固化向量检索触发条件（规模/QPS/质量退化）到运行手册。
-4. 准备 v0.1.1 稳定化发布说明（对比 v0.1.0-usable 的治理能力增量）。
+1. 连续 1 周运行 weekly governance report，沉淀趋势基线与告警阈值。
+2. 按运行数据复核 `NO_GO_KEEP_FTS` 触发条件（规模/QPS/质量退化）。
+3. 准备下一阶段（v0.2）需求梳理：外部依赖熔断/降级与长期稳定性观测。
 
 ## 风险追踪
 
-- **发布风险（低）**：`main` 与 `v0.1.0-usable` 已推送远端，当前以稳定化治理风险为主。
+- **发布风险（低）**：v0.1.1 稳定化已闭环并推送远端，当前以运行期观测风险为主。
 - **并发治理风险（低）**：lease 锁 + 过期回收 + renew/heartbeat 已接入，剩余风险主要是长时间运行稳定性观察周期不足。
 - **CI 覆盖风险（低）**：新增治理验证已并入主 workflow；workspace replay 已按时长分层到夜间/手动 workflow。
 - **数据风险（中-低）**：workspace 回放与恢复路径已覆盖，且已有吞吐/lag 基线；剩余风险在真实生产负载波动。

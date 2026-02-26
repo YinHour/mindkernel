@@ -1,0 +1,35 @@
+name: governance-weekly-report
+
+on:
+  schedule:
+    # Monday 09:00 Asia/Shanghai (01:00 UTC)
+    - cron: "0 1 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: governance-weekly-report
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Generate weekly governance report
+        run: |
+          python3 tools/validation/generate_weekly_governance_report_v0_1.py --since-days 7
+
+      - name: Upload governance artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-governance-report
+          path: reports/governance/*

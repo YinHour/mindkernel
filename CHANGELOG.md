@@ -1,5 +1,41 @@
 # Changelog
 
+## v0.1.1-stabilized
+
+_Date: 2026-02-26 (Asia/Shanghai)_
+
+### Release gate status
+- `v0.1.1-r2-r6` quick gate：**16/16 PASS**。
+- `v0.1.1-r2-r6-full` full gate：**19/19 PASS**。
+- 证据文件：
+  - `reports/release_check_v0_1.json`
+  - `reports/release_check_v0_1.md`
+
+### Key additions in v0.1.1-stabilized
+- R2（lease renew）：
+  - `scheduler_v0_1.py` 新增 `renew_lease` + `renew-lease` CLI。
+  - reflect/temporal worker 接入 `--lease-renew-sec` heartbeat 续租能力。
+  - 验证：`validate_scheduler_lease_renew_v0_1.py`。
+- R3（temporal 扩展）：
+  - `temporal_governance_worker_v0_1.py` 扩展动作至 `verify/revalidate/decay/archive/reinstate-check`。
+  - 验证：`validate_temporal_verify_revalidate_v0_1.py`。
+- R5（吞吐基线）：
+  - 新增 `benchmark_scheduler_throughput_v0_1.py` + `validate_scheduler_benchmark_v0_1.py`。
+  - 首版基线：throughput `160215.847 jobs/min`、lag p95 `0.483s`、retry `0.0%`（synthetic profile）。
+- R6（向量检索评估）：
+  - 新增 `evaluate_vector_retrieval_readiness_v0_1.py` + `validate_vector_readiness_v0_1.py`。
+  - 当前结论：`NO_GO_KEEP_FTS`（规模/流量未达触发阈值）。
+- CI 门禁更新：
+  - 主 workflow 追加 R2/R3/R5/R6 验证。
+  - `critical-path-validation` 超时窗口提升到 20 分钟。
+
+### Compatibility / rollback
+- 兼容性：v0.1.1 以治理能力增强与验证覆盖扩展为主，无 schema 破坏性变更。
+- 回滚建议：
+  1. 优先回退到 `v0.1.0-usable`；
+  2. 重新执行 `release_check_v0_1.py` 验证基线；
+  3. 逐项恢复 R2~R6 能力，定位风险来源。
+
 ## v0.1.0-usable（release prep）
 
 _Date: 2026-02-25 (Asia/Shanghai)_
