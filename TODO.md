@@ -1,6 +1,6 @@
 # MindKernel TODO
 
-_Last updated: 2026-02-26 13:14 (Asia/Shanghai)_
+_Last updated: 2026-02-26 13:19 (Asia/Shanghai)_
 
 ## P0（近期必须推进）
 
@@ -48,7 +48,8 @@ _Last updated: 2026-02-26 13:14 (Asia/Shanghai)_
 - [x] R3 已完成：temporal worker 扩展 `verify/revalidate` 并通过 `validate_temporal_verify_revalidate_v0_1.py`。
 - [x] R5 已完成：新增吞吐/延迟 benchmark 脚本（`benchmark_scheduler_throughput_v0_1.py`）与验证脚本。
 - [x] R6 已完成：新增向量检索就绪度评估脚本（`evaluate_vector_retrieval_readiness_v0_1.py`），当前决策 `NO_GO_KEEP_FTS`。
-- [x] 已完成本轮稳定化代码推送（`main` 更新到 `faf3fd4`）。
+- [x] 已完成本轮稳定化代码推送（`main` 更新到 `ae6b9e5`）。
+- [x] 已完成稳定化版本标签：`v0.1.1-stabilized`（已推送远端）。
 - [x] 已新增 v0.1.1 发布手册与周报定时 workflow，进入运行期观测阶段。
 
 ## 下一步（运行期）
