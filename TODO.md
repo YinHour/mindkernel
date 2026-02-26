@@ -58,7 +58,9 @@ _Last updated: 2026-02-26 13:19 (Asia/Shanghai)_
 
 1. 连续 1 周运行 weekly governance report，沉淀趋势基线与告警阈值。
 2. 按运行数据复核 `NO_GO_KEEP_FTS` 触发条件（规模/QPS/质量退化）。
-3. 准备下一阶段（v0.2）需求梳理：外部依赖熔断/降级与长期稳定性观测。
+3. 执行 v0.2 daemon 计划 D1（骨架 + checkpoint + graceful shutdown）：
+   - 计划文档：`docs/06-execution/v0.2-daemon-memory-observer-plan.md`
+4. 准备下一阶段（v0.2）需求梳理：外部依赖熔断/降级与长期稳定性观测。
 
 ## 风险追踪
 
