@@ -42,6 +42,7 @@ from core.realtime_memory_candidate_v0_2 import (  # noqa: E402
     is_workflow_ack_text,
     temporal_signature_text,
 )
+from core.strategies import get_strategy, CandidateScore  # noqa: E402
 
 DEFAULT_EVENTS_FILE = ROOT / "data" / "fixtures" / "daemon_events_v0_2.jsonl"
 DEFAULT_STATE_DB = ROOT / "data" / "daemon" / "memory_observer_v0_2.sqlite"
@@ -69,6 +70,48 @@ class BatchResult:
 
 
 _STOP = False
+
+# 阈值策略实例（延迟初始化）
+_threshold_strategy = None
+
+
+def _get_threshold_strategy():
+    """获取阈值策略实例"""
+    global _threshold_strategy
+    if _threshold_strategy is None:
+        _threshold_strategy = get_strategy("rule_based")
+    return _threshold_strategy
+
+
+def _apply_threshold_strategy(cand: dict) -> tuple[str, str]:
+    """
+    应用阈值策略决定候选状态
+    
+    Returns:
+        (status, note): 状态和备注
+    """
+    strategy = _get_threshold_strategy()
+    
+    # 构造评分
+    score = CandidateScore(
+        risk_score=int(cand.get("risk_score", 25)),
+        risk_level=str(cand.get("risk_level", "low")),
+        value_score=int(cand.get("value_score", 20)),
+        reason_codes=cand.get("reason_codes", []),
+    )
+    
+    # 获取决策
+    decision = strategy.decide(score)
+    
+    # 映射到状态
+    status_map = {
+        "auto_pool": "observed_only",  # 入观察池，等待后续处理
+        "review_queue": "review_pending",  # 待审核
+        "discard": "strategy_discarded",  # 策略决定丢弃
+    }
+    
+    status = status_map.get(decision.action, "observed_only")
+    return status, decision.note
 
 
 def now_iso() -> str:
@@ -660,6 +703,14 @@ def process_batch(
                         # partial: enqueue only for allowlisted sessions
                         # on: enqueue for all sessions
                         sess_id = str(cand.get("session_id") or "session_unknown")
+                        
+                        # 应用阈值策略
+                        strategy_status, strategy_note = _apply_threshold_strategy(cand)
+                        if strategy_status == "strategy_discarded":
+                            # 策略决定丢弃
+                            _candidate_upsert(c, cand, status="strategy_discarded", note=strategy_note)
+                            continue
+                        
                         if feature_flag == "off":
                             _candidate_upsert(c, cand, status="feature_flag_off")
                             continue
