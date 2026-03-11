@@ -7,8 +7,12 @@ import re
 from datetime import datetime, timedelta, timezone
 
 HIGH_RISK_PATTERNS = [
-    r"\b(delete|wipe|erase|reset all|overwrite)\b",
-    r"删除|清空|覆盖|重置全部|抹掉",
+    r"\b(delete|wipe|erase)\s+(all|everything|all data|the file|files?)\b",
+    r"\boverwrite\s+(all|everything|the file|files?)\b",
+    r"\breset all\b",
+    r"(删除|清空)(全部|所有)?(文件|目录|数据)",
+    r"覆盖(文件|全部|所有内容)",
+    r"重置全部|抹掉(全部|所有)?(数据|记录)?",
 ]
 MEDIUM_RISK_PATTERNS = [
     r"\b(todo|deadline|remind|follow[- ]?up|plan)\b",
@@ -19,6 +23,30 @@ MEMORY_SIGNAL_PATTERNS = [
     r"\b(remember|preference|always|never)\b",
     r"记住|偏好|习惯|长期",
 ]
+
+# system/control envelopes that should not be treated as normal memory facts
+SYSTEM_NOISE_PATTERNS = [
+    r"^\s*pre-compaction memory flush",
+    r"\[system message\]",
+    r'a cron job ".*" just completed successfully',
+    r"^\s*system:\s*\[",
+]
+
+# explicit negations that should down-rank overwrite/delete keywords
+HIGH_RISK_NEGATIONS = [
+    r"\b(do not|don't|never)\s+(delete|overwrite|wipe|erase)\b",
+    r"不要(删除|覆盖|清空|重置)",
+    r"禁止(删除|覆盖|清空|重置)",
+]
+
+ACK_ONLY_PATTERNS = [
+    r"^(好的|好|收到|明白|了解|ok|okay|yes|继续|继续推进|可以|行)$",
+]
+
+TIME_PREFIX_RE = re.compile(r"^\[[A-Za-z]{3}\s+\d{4}-\d{2}-\d{2}[^\]]*\]\s*")
+SESSION_ID_RE = re.compile(r"\[sessionid:\s*[0-9a-f\-]{8,}\]", re.IGNORECASE)
+UUID_RE = re.compile(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", re.IGNORECASE)
+WHITESPACE_RE = re.compile(r"\s+")
 
 
 def now_iso() -> str:
@@ -37,14 +65,60 @@ def _has_any(patterns: list[str], text: str) -> bool:
     return any(re.search(p, text, flags=re.IGNORECASE) for p in patterns)
 
 
+def _strip_chat_time_prefix(text: str) -> str:
+    if not text:
+        return ""
+    return TIME_PREFIX_RE.sub("", text.strip())
+
+
+def is_system_noise_text(text: str) -> bool:
+    if not text:
+        return False
+    return _has_any(SYSTEM_NOISE_PATTERNS, text)
+
+
+def is_workflow_ack_text(text: str) -> bool:
+    t = _strip_chat_time_prefix(text).strip().lower()
+    if not t:
+        return False
+    return _has_any(ACK_ONLY_PATTERNS, t)
+
+
+def temporal_signature_text(text: str) -> str:
+    """Normalize text into a stable signature for time-window repeat counting."""
+    t = (text or "").lower().strip()
+    t = TIME_PREFIX_RE.sub("", t)
+    t = SESSION_ID_RE.sub("[session]", t)
+    t = UUID_RE.sub("[uuid]", t)
+    t = re.sub(r"\b\d{4}-\d{2}-\d{2}\b", "[date]", t)
+    t = re.sub(r"\b\d{1,2}:\d{2}(?::\d{2})?\b", "[time]", t)
+    t = re.sub(r"\b\d+\b", "[num]", t)
+    t = WHITESPACE_RE.sub(" ", t).strip()
+    if len(t) > 240:
+        t = t[:240]
+    return t or "[empty]"
+
+
 def infer_risk(text: str) -> tuple[int, str, list[str]]:
     reasons: list[str] = []
-    if _has_any(HIGH_RISK_PATTERNS, text):
+
+    if is_system_noise_text(text):
+        reasons.append("SYSTEM_NOISE")
+        return 12, "low", reasons
+
+    high_hit = _has_any(HIGH_RISK_PATTERNS, text)
+    high_negated = _has_any(HIGH_RISK_NEGATIONS, text)
+    if high_hit and not high_negated:
         reasons.append("HIGH_RISK_PATTERN")
         return 82, "high", reasons
+    if high_hit and high_negated:
+        reasons.append("HIGH_RISK_NEGATED")
+        return 28, "low", reasons
+
     if _has_any(MEDIUM_RISK_PATTERNS, text):
         reasons.append("MEDIUM_RISK_PATTERN")
         return 56, "medium", reasons
+
     reasons.append("DEFAULT_LOW")
     return 25, "low", reasons
 
@@ -75,24 +149,37 @@ def extract_candidates(
     *,
     min_content_len: int = 6,
     max_candidates: int = 1,
+    include_system: bool = True,
 ) -> list[dict]:
     """Extract realtime candidates from normalized event.
 
     D3 policy (minimal):
     - focus on user events
+    - support system events for error/alert monitoring
     - require non-empty content and min length
     - one candidate per event by default
+    - system/control envelopes are handled separately by daemon temporal logic
     """
 
     role = str(ev.get("role") or "")
     text = str(ev.get("content") or "").strip()
-    if role != "user":
+    # Support user events + system events (for error monitoring)
+    if role == "user":
+        pass  # user events always OK
+    elif role == "system" and include_system:
+        pass  # system events OK if enabled
+    else:
         return []
     if len(text) < max(1, int(min_content_len)):
         return []
+    if is_system_noise_text(text):
+        return []
 
     risk_score, risk_level, reasons = infer_risk(text)
+    # Boost value_score for system error events
     value_score = infer_value_score(text, role)
+    if role == "system" and any(kw in text.lower() for kw in ["错误", "error", "失败", "fail", "invalid", "不支持"]):
+        value_score = min(100, value_score + 30)
 
     seed = f"{ev.get('session_id')}|{ev.get('turn_id')}|{ev.get('event_id')}|{text}"
     h = _stable_hash(seed)
@@ -126,4 +213,3 @@ def extract_candidates(
     }
 
     return [candidate][: max(1, int(max_candidates))]
-
