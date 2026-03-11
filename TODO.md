@@ -1,6 +1,6 @@
 # MindKernel TODO
 
-_Last updated: 2026-03-03 11:09 (Asia/Shanghai)_
+_Last updated: 2026-03-10 09:00 (Asia/Shanghai)_
 
 ## P0（近期必须推进）
 
@@ -84,6 +84,14 @@ _Last updated: 2026-03-03 11:09 (Asia/Shanghai)_
 - [x] v0.2 主阻塞未变化：D1 代码骨架与最小 smoke（含 checkpoint/recover）仍未落地。
 - [x] 风险画像保持稳定：外部依赖风险（中）持续；安装流程文档/脚本漂移风险维持中低并待 CI smoke 固化。
 
+## 今日巡检（2026-03-04）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新仍为 6.26（2026-02-21），截至今日无新增讨论条目。
+- [x] 核对代码基线增量：新增 1 个提交（`a2b758a`，LLM 韧性增强 + observation 报告能力强化）。
+- [x] TODO 收口状态保持一致：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [x] v0.2 运行观察：Day1 已完成，Day2 需执行 run-once + observation 报告。
+- [x] 风险画像保持稳定：外部依赖风险（中）持续；安装流程文档/脚本漂移风险维持中低并待 CI smoke 固化。
+
 ## 今日巡检（2026-03-03）
 
 - [x] 已落地 v0.2 D1：`tools/daemon/memory_observer_daemon_v0_2.py`（poll/tail、pid/lock、checkpoint/recover、graceful shutdown）。
@@ -103,6 +111,64 @@ _Last updated: 2026-03-03 11:09 (Asia/Shanghai)_
 - [x] v0.2 D1~D6 已形成可闭环原型并完成门禁验证（当前主线切换到运行观察 + 外部依赖熔断降级设计）。
 - [x] 风险画像保持稳定：外部依赖风险（中）持续；安装流程文档/脚本漂移风险维持中低并待 CI smoke 固化。
 
+## 今日巡检（2026-03-05）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新仍为 6.26（2026-02-21），截至今日无新增讨论条目。
+- [x] 核对代码基线增量：新增 1 个提交（`a2b758a`，LLM 韧性增强 + observation 报告能力强化），`main`/`origin/main` 更新到 `a2b758a`。
+- [x] TODO 收口状态保持一致：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [ ] v0.2 运行观察 Day2/Day3：daemon 自 2026-03-03T03:48:10Z 后未运行，需补 run-once + observation 报告。
+- [x] 风险画像保持稳定：外部依赖风险（中）持续；安装流程文档/脚本漂移风险维持中低并待 CI smoke 固化。
+
+## 今日巡检（2026-03-06）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新仍为 6.26（2026-02-21），截至今日无新增讨论条目。
+- [x] 核对代码基线增量：`main`/`origin/main` 仍停留在 `a2b758a`，自昨日以来无新增提交。
+- [x] TODO 收口状态保持一致：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [ ] v0.2 运行观察 Day2~Day4：daemon 自 2026-03-03T03:48:10Z 后未运行，需补 run-once + observation 报告。
+
+## 今日巡检（2026-03-07）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新仍为 6.26（2026-02-21），截至今日无新增讨论条目。
+- [x] 核对代码基线增量：`main`/`origin/main` 仍停留在 `a2b758a`，自 3 月 5 日以来无新增提交。
+- [x] TODO 收口状态保持一致：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [ ] v0.2 运行观察 Day2~Day5：daemon 自 2026-03-03T03:48:10Z 后未运行，需补 run-once + observation 报告。
+- [x] 风险画像保持稳定：外部依赖风险（中）持续；安装流程文档/脚本漂移风险维持中低并待 CI smoke 固化。
+
+## 今日巡检（2026-03-08）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新仍为 6.26（2026-02-21），截至今日无新增讨论条目。
+- [x] 核对代码基线增量：`main`/`origin/main` 仍停留在 `a2b758a`，自 3 月 5 日以来无新增提交。
+- [x] TODO 收口状态保持一致：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [ ] v0.2 运行观察 Day2~Day6：daemon 自 2026-03-03T03:48:10Z 后未运行，需补 run-once + observation 报告（**已延期 6 天**）。
+- [x] 风险画像保持稳定：外部依赖风险（中）持续；安装流程文档/脚本漂移风险维持中低并待 CI smoke 固化。
+
+## 今日巡检（2026-03-09）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新仍为 6.26（2026-02-21），截至今日无新增讨论条目。
+- [x] 核对代码基线增量：`main`/`origin/main` 仍停留在 `a2b758a`，自 3 月 5 日以来无新增提交。
+- [x] TODO 收口状态保持一致：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [ ] v0.2 运行观察 Day2~Day7：daemon 自 2026-03-03T03:48:10Z 后未运行，需补 run-once + observation 报告（**已延期 7 天，进入阈值固化复盘阶段**）。
+- [x] 风险画像保持稳定：外部依赖风险（中）持续；安装流程文档/脚本漂移风险维持中低并待 CI smoke 固化。
+- [x] 观察点：本地有未提交修改（realtime_memory_candidate_v0_2.py、daemon_v0_2.py、observation_report_v0_2.py），建议尽快合入或落档说明。
+
+## 今日巡检（2026-03-10）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新仍为 6.26（2026-02-21），截至今日无新增讨论条目。
+- [x] 核对代码基线增量：`main`/`origin/main` 仍停留在 `a2b758a`，自 3 月 5 日以来无新增提交。
+- [x] TODO 收口状态保持一致：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [x] v0.2 运行观察 Day2~Day8：daemon 自 2026-03-03T03:48:10Z 后未运行，需补 run-once + observation 报告（**已延期 8 天，进入阈值固化复盘阶段**）。
+- [x] 风险画像保持稳定：外部依赖风险（中）持续；安装流程文档/脚本漂移风险维持中低并待 CI smoke 固化。
+- [x] 观察点：本地有未提交修改（realtime_memory_candidate_v0_2.py、daemon_v0_2.py、observation_report_v0_2.py、TODO.md），建议尽快合入或落档说明。
+
+## 今日巡检（2026-03-11）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新仍为 6.26（2026-02-21），截至今日无新增讨论条目。
+- [x] 核对代码基线增量：`main`/`origin/main` 仍停留在 `a2b758a`，自 3 月 5 日以来无新增提交。
+- [x] TODO 收口状态保持一致：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [ ] v0.2 运行观察 Day2~Day9：daemon 自 2026-03-03T03:48:10Z 后未运行，需补 run-once + observation 报告（**已延期 9 天，需决策是否继续或重新规划**）。
+- [x] 风险画像保持稳定：外部依赖风险（中）持续；安装流程文档/脚本漂移风险维持中低并待 CI smoke 固化。
+- [x] 观察点：本地有未提交修改（realtime_memory_candidate_v0_2.py、daemon_v0_2.py、observation_report_v0_2.py、TODO.md、checklists/），建议尽快合入或落档说明。
+
 ## 下一步（运行期）
 
 > 参考：`docs/06-execution/release-runbook-v0.1.1-stabilized.md`
@@ -121,6 +187,20 @@ _Last updated: 2026-03-03 11:09 (Asia/Shanghai)_
    - [x] 完成 D6：门禁分层与夜间回放策略固化。
 4. 准备下一阶段（v0.2）需求梳理：外部依赖熔断/降级与长期稳定性观测（韧性原型已落地，待运行观察与阈值固化）。
 5. 将 installer + README 安装指引纳入发布手册与 CI smoke 安装验证（避免文档/脚本漂移）。
+
+
+## v0.2 运行观察（7天）
+
+- [x] Day1（2026-03-03）：已启动观察基线（shadow + run-once）。
+  - state_db: `data/daemon/memory_observer_v0_2.sqlite`
+  - observation: `reports/daemon/observation_20260303_034814.md`
+  - 指标快照：batches=2, processed=955, candidates=52, errors=0
+- [ ] Day2：增量 run-once + observation 报告
+- [ ] Day3：增量 run-once + observation 报告
+- [ ] Day4：增量 run-once + observation 报告
+- [ ] Day5：增量 run-once + observation 报告
+- [ ] Day6：增量 run-once + observation 报告
+- [ ] Day7：增量 run-once + observation 报告 + 阈值固化复盘
 
 ## 风险追踪
 

@@ -102,8 +102,14 @@ def temporal_signature_text(text: str) -> str:
 def infer_risk(text: str) -> tuple[int, str, list[str]]:
     reasons: list[str] = []
 
+    # 系统噪音直接返回低风险
     if is_system_noise_text(text):
         reasons.append("SYSTEM_NOISE")
+        return 12, "low", reasons
+
+    # 系统消息（非噪音）也返回低风险 - 系统性问题不代表高风险
+    if is_system_message_text(text):
+        reasons.append("SYSTEM_MESSAGE")
         return 12, "low", reasons
 
     high_hit = _has_any(HIGH_RISK_PATTERNS, text)
@@ -123,12 +129,57 @@ def infer_risk(text: str) -> tuple[int, str, list[str]]:
     return 25, "low", reasons
 
 
+# 识别系统消息的模式（用于降风险）
+SYSTEM_MESSAGE_PATTERNS = [
+    r"^System:",
+    r"^\[system\]",
+    r"^系统:",
+    r"Gateway restart",
+    r"config-patch",
+    r"Pre-compaction",
+    r"memory flush",
+]
+
+
+def is_system_message_text(text: str) -> bool:
+    """识别系统消息（非用户主观内容）"""
+    if not text:
+        return False
+    return _has_any(SYSTEM_MESSAGE_PATTERNS, text)
+
+
+# 识别记忆价值信号：主题/结果/产出物
+MEMORY_ASSET_PATTERNS = [
+    r"完成|完成",
+    r"创建|新建|生成",
+    r"修改|更新|编辑",
+    r"提交|commit|push",
+    r"测试|验证|验证",
+    r"报告|总结|摘要",
+    r"解决|修复|fix",
+    r"部署|deploy",
+    r"配置|配置|setting",
+    r"学习|记住|记住",
+    r"决定|决策|选择",
+]
+
+
 def infer_value_score(text: str, role: str) -> int:
-    base = 20 if role == "user" else 8
+    # 基础分：用户消息更高
+    base = 30 if role == "user" else 5
+    
+    # 系统消息直接降为最低价值
+    if is_system_message_text(text):
+        return 5
+    
+    # 用户消息中的记忆价值信号
     if _has_any(MEMORY_SIGNAL_PATTERNS, text):
         base += 25
-    if _has_any(MEDIUM_RISK_PATTERNS, text):
-        base += 20
+    
+    # 主题/结果/asset 信号
+    if _has_any(MEMORY_ASSET_PATTERNS, text):
+        base += 30
+    
     return min(100, base)
 
 

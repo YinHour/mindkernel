@@ -1,0 +1,2 @@
+{"session_id": "test_s1", "turn_id": "t1", "role": "user", "timestamp": "2026-03-11T00:00:00Z", "content": "记得今天下午开会讨论项目进度"}
+{"session_id": "test_s1", "turn_id": "t2", "role": "assistant", "timestamp": "2026-03-11T00:00:01Z", "content": "好的，我记录一下下午开会讨论项目进度"}

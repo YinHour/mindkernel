@@ -52,12 +52,16 @@ def render_md(report: dict) -> str:
         f"- throttled: {m['throttled']}",
         f"- skipped_hwm: {m['skipped_hwm']}",
         f"- errors: {m['errors']} (rate={m['error_rate']:.4f})",
+        f"- system_repeat_alerts: {m['system_repeat_alerts']}",
+        f"- ack_compressed: {m['ack_compressed']}",
+        f"- ack_rollup_candidates: {m['ack_rollup_candidates']}",
         "",
         "## Alerts",
         "",
         f"- error_spike: {a['error_spike']}",
         f"- dedupe_high: {a['dedupe_high']}",
         f"- hwm_pressure: {a['hwm_pressure']}",
+        f"- system_repeat_spike: {a['system_repeat_spike']}",
         "",
     ]
     return "\n".join(lines)
@@ -70,6 +74,7 @@ def main():
     p.add_argument("--dedupe-high-threshold", type=float, default=0.5)
     p.add_argument("--error-spike-threshold", type=float, default=0.05)
     p.add_argument("--hwm-pressure-threshold", type=int, default=10)
+    p.add_argument("--system-repeat-threshold", type=int, default=1)
     p.add_argument("--out-json")
     p.add_argument("--out-md")
     args = p.parse_args()
@@ -88,6 +93,9 @@ def main():
         "throttled": 0,
         "skipped_hwm": 0,
         "errors": 0,
+        "system_repeat_alerts": 0,
+        "ack_compressed": 0,
+        "ack_rollup_candidates": 0,
         "dedupe_rate": 0.0,
         "enqueue_rate": 0.0,
         "error_rate": 0.0,
@@ -98,14 +106,33 @@ def main():
         c.row_factory = sqlite3.Row
         tables = {r[0] for r in _query(c, "SELECT name FROM sqlite_master WHERE type='table'")}
         if "daemon_batches" in tables:
+            cols = {r[1] for r in _query(c, "PRAGMA table_info(daemon_batches)")}
+            extra_system = "system_repeat_alerts" in cols
+            extra_ack = "ack_compressed" in cols
+            extra_rollup = "ack_rollup_candidates" in cols
+
+            select_parts = [
+                "processed",
+                "normalized",
+                "deduped_events",
+                "candidates",
+                "enqueued",
+                "throttled",
+                "skipped_hwm",
+                "errors",
+                "ended_at",
+                "system_repeat_alerts" if extra_system else "0 AS system_repeat_alerts",
+                "ack_compressed" if extra_ack else "0 AS ack_compressed",
+                "ack_rollup_candidates" if extra_rollup else "0 AS ack_rollup_candidates",
+            ]
+            sql = (
+                "SELECT "
+                + ", ".join(select_parts)
+                + " FROM daemon_batches WHERE ended_at >= ?"
+            )
             rows = _query(
                 c,
-                """
-                SELECT processed, normalized, deduped_events, candidates, enqueued,
-                       throttled, skipped_hwm, errors, ended_at
-                FROM daemon_batches
-                WHERE ended_at >= ?
-                """,
+                sql,
                 (since.replace(microsecond=0).isoformat().replace("+00:00", "Z"),),
             )
             metrics["batches"] = len(rows)
@@ -118,6 +145,9 @@ def main():
                 metrics["throttled"] += int(r["throttled"])
                 metrics["skipped_hwm"] += int(r["skipped_hwm"])
                 metrics["errors"] += int(r["errors"])
+                metrics["system_repeat_alerts"] += int(r["system_repeat_alerts"])
+                metrics["ack_compressed"] += int(r["ack_compressed"])
+                metrics["ack_rollup_candidates"] += int(r["ack_rollup_candidates"])
         c.close()
 
     if metrics["normalized"] > 0:
@@ -130,6 +160,7 @@ def main():
         "error_spike": metrics["error_rate"] > float(args.error_spike_threshold),
         "dedupe_high": metrics["dedupe_rate"] > float(args.dedupe_high_threshold),
         "hwm_pressure": metrics["skipped_hwm"] >= int(args.hwm_pressure_threshold),
+        "system_repeat_spike": metrics["system_repeat_alerts"] >= int(args.system_repeat_threshold),
     }
 
     report = {

@@ -24,7 +24,7 @@ import sqlite3
 import sys
 import time
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -36,7 +36,12 @@ if str(TOOLS_SCHED) not in sys.path:
 
 import scheduler_v0_1 as sch  # noqa: E402
 from core.event_normalizer_v0_2 import event_fingerprint, minute_bucket, normalize_event  # noqa: E402
-from core.realtime_memory_candidate_v0_2 import extract_candidates  # noqa: E402
+from core.realtime_memory_candidate_v0_2 import (  # noqa: E402
+    extract_candidates,
+    is_system_noise_text,
+    is_workflow_ack_text,
+    temporal_signature_text,
+)
 
 DEFAULT_EVENTS_FILE = ROOT / "data" / "fixtures" / "daemon_events_v0_2.jsonl"
 DEFAULT_STATE_DB = ROOT / "data" / "daemon" / "memory_observer_v0_2.sqlite"
@@ -58,6 +63,9 @@ class BatchResult:
     dedup_enqueues: int
     throttled: int
     skipped_hwm: int
+    system_repeat_alerts: int
+    ack_compressed: int
+    ack_rollup_candidates: int
 
 
 _STOP = False
@@ -65,6 +73,33 @@ _STOP = False
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _parse_iso(ts: str | None) -> datetime:
+    v = str(ts or "").strip()
+    if not v:
+        return datetime.now(timezone.utc)
+    try:
+        if v.endswith("Z"):
+            dt = datetime.fromisoformat(v[:-1] + "+00:00")
+        else:
+            dt = datetime.fromisoformat(v)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    except Exception:  # noqa: BLE001
+        return datetime.now(timezone.utc)
+
+
+def _iso_minus_minutes(base_ts: str | None, minutes: int) -> str:
+    dt = _parse_iso(base_ts) - timedelta(minutes=max(1, int(minutes)))
+    return dt.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _hash12(s: str) -> str:
+    import hashlib
+
+    return hashlib.sha1(s.encode("utf-8")).hexdigest()[:12]
 
 
 def _on_stop_signal(_signum: int, _frame):
@@ -188,6 +223,20 @@ def init_db(c: sqlite3.Connection):
             PRIMARY KEY(session_id, minute_bucket)
         );
 
+        CREATE TABLE IF NOT EXISTS daemon_temporal_signals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            signal_kind TEXT NOT NULL,
+            signature TEXT NOT NULL,
+            event_id TEXT,
+            session_id TEXT,
+            turn_id TEXT,
+            observed_at TEXT NOT NULL,
+            content_preview TEXT
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_daemon_temporal_signals_sig
+        ON daemon_temporal_signals(signal_kind, signature, observed_at DESC);
+
         CREATE TABLE IF NOT EXISTS daemon_batches (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             mode TEXT NOT NULL,
@@ -202,7 +251,10 @@ def init_db(c: sqlite3.Connection):
             throttled INTEGER NOT NULL,
             skipped_hwm INTEGER NOT NULL,
             errors INTEGER NOT NULL,
-            offset INTEGER NOT NULL
+            offset INTEGER NOT NULL,
+            system_repeat_alerts INTEGER NOT NULL DEFAULT 0,
+            ack_compressed INTEGER NOT NULL DEFAULT 0,
+            ack_rollup_candidates INTEGER NOT NULL DEFAULT 0
         );
         """
     )
@@ -217,6 +269,16 @@ def init_db(c: sqlite3.Connection):
             """,
             (ts, ts),
         )
+
+    # lightweight migration for older daemon_batches schema
+    batch_cols = {r["name"] for r in c.execute("PRAGMA table_info(daemon_batches)").fetchall()}
+    if "system_repeat_alerts" not in batch_cols:
+        c.execute("ALTER TABLE daemon_batches ADD COLUMN system_repeat_alerts INTEGER NOT NULL DEFAULT 0")
+    if "ack_compressed" not in batch_cols:
+        c.execute("ALTER TABLE daemon_batches ADD COLUMN ack_compressed INTEGER NOT NULL DEFAULT 0")
+    if "ack_rollup_candidates" not in batch_cols:
+        c.execute("ALTER TABLE daemon_batches ADD COLUMN ack_rollup_candidates INTEGER NOT NULL DEFAULT 0")
+
     c.commit()
 
 
@@ -300,6 +362,42 @@ def _throttle_inc(c: sqlite3.Connection, session_id: str, bucket: str):
     )
 
 
+def _record_temporal_signal(c: sqlite3.Connection, *, signal_kind: str, signature: str, ev: dict):
+    c.execute(
+        """
+        INSERT INTO daemon_temporal_signals(signal_kind, signature, event_id, session_id, turn_id, observed_at, content_preview)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            signal_kind,
+            signature,
+            str(ev.get("event_id") or ""),
+            str(ev.get("session_id") or "session_unknown"),
+            str(ev.get("turn_id") or ""),
+            str(ev.get("timestamp") or now_iso()),
+            str(ev.get("content") or "")[:200],
+        ),
+    )
+
+
+def _count_recent_signals(
+    c: sqlite3.Connection,
+    *,
+    signal_kind: str,
+    signature: str,
+    since_ts_iso: str,
+) -> int:
+    row = c.execute(
+        """
+        SELECT COUNT(1) AS n
+        FROM daemon_temporal_signals
+        WHERE signal_kind=? AND signature=? AND observed_at>=?
+        """,
+        (signal_kind, signature, since_ts_iso),
+    ).fetchone()
+    return int(row["n"]) if row else 0
+
+
 def _candidate_upsert(c: sqlite3.Connection, cand: dict, *, status: str, job_id: str | None = None, note: str | None = None):
     t = now_iso()
     c.execute(
@@ -368,6 +466,10 @@ def process_batch(
     scheduler_queue_high_watermark: int,
     enqueue_min_risk_level: str,
     max_candidates_per_event: int,
+    system_repeat_window_min: int,
+    system_repeat_threshold: int,
+    ack_window_min: int,
+    ack_rollup_every: int,
 ) -> BatchResult:
     if mode not in {"poll", "tail"}:
         raise ValueError(f"unsupported mode: {mode}")
@@ -385,6 +487,9 @@ def process_batch(
     dedup_enqueues = 0
     throttled = 0
     skipped_hwm = 0
+    system_repeat_alerts = 0
+    ack_compressed = 0
+    ack_rollup_candidates = 0
 
     scheduler_queued_cache: int | None = None
 
@@ -429,7 +534,112 @@ def process_batch(
                 else:
                     _mark_seen(c, fp, ev)
 
-                    ev_candidates = extract_candidates(ev, min_content_len=6, max_candidates=max_candidates_per_event)
+                    ev_text = str(ev.get("content") or "")
+                    ev_ts = str(ev.get("timestamp") or now_iso())
+                    ev_candidates: list[dict] = []
+
+                    # time-dimension channel A:
+                    # repeated system/control envelopes => high-risk system anomaly signal
+                    if str(ev.get("role") or "") == "user" and is_system_noise_text(ev_text):
+                        sig = temporal_signature_text(ev_text)
+                        _record_temporal_signal(c, signal_kind="system_signal", signature=sig, ev=ev)
+                        repeat_in_window = _count_recent_signals(
+                            c,
+                            signal_kind="system_signal",
+                            signature=sig,
+                            since_ts_iso=_iso_minus_minutes(ev_ts, system_repeat_window_min),
+                        )
+                        repeat_24h = _count_recent_signals(
+                            c,
+                            signal_kind="system_signal",
+                            signature=sig,
+                            since_ts_iso=_iso_minus_minutes(ev_ts, 24 * 60),
+                        )
+                        status = "system_signal_observed"
+
+                        if repeat_in_window >= max(1, int(system_repeat_threshold)):
+                            sig_hash = _hash12(sig)
+                            hour_bucket = _parse_iso(ev_ts).strftime("%Y%m%d%H")
+                            idem = f"rtmem:system-repeat:{sig_hash}:{hour_bucket}"
+                            # 系统重复信号 = 系统稳定性指标，不是"高风险"
+                            # 按新策略：系统性问题不代表高风险
+                            level = "low"
+                            score = 15  # 系统信号低风险
+                            cand = {
+                                "candidate_id": f"cand_sysrep_{_hash12(idem)}",
+                                "event_id": ev.get("event_id"),
+                                "session_id": ev.get("session_id"),
+                                "turn_id": ev.get("turn_id"),
+                                "role": ev.get("role"),
+                                "risk_score": score,
+                                "risk_level": level,
+                                "value_score": 10,  # 系统信号低价值
+                                "reason_codes": ["SYSTEM_REPEAT_ALERT"],
+                                "summary": f"系统提示重复(稳定性指标): sig={sig_hash}, window={system_repeat_window_min}m repeat={repeat_in_window}, repeat_24h={repeat_24h}",
+                                "created_at": now_iso(),
+                                "idempotency_key": idem,
+                                "scheduler_job": {
+                                    "object_type": "reflect_job",
+                                    "object_id": f"rt_system_repeat_{sig_hash}_{hour_bucket}",
+                                    "action": "reflect",
+                                    "run_at": now_iso(),
+                                    "priority": "low",  # 降低优先级
+                                    "max_attempts": 3,
+                                    "idempotency_key": idem,
+                                    "correlation_id": f"daemon_v0_2:system_repeat:{sig_hash}",
+                                },
+                            }
+                            ev_candidates.append(cand)
+                            system_repeat_alerts += 1
+
+                    # time-dimension channel B:
+                    # workflow ACK tokens are compressed; emit periodic rollup summary only
+                    elif str(ev.get("role") or "") == "user" and is_workflow_ack_text(ev_text):
+                        sig = f"{ev.get('session_id') or 'session_unknown'}::{temporal_signature_text(ev_text)}"
+                        _record_temporal_signal(c, signal_kind="workflow_ack", signature=sig, ev=ev)
+                        ack_count = _count_recent_signals(
+                            c,
+                            signal_kind="workflow_ack",
+                            signature=sig,
+                            since_ts_iso=_iso_minus_minutes(ev_ts, ack_window_min),
+                        )
+                        status = "ack_compressed"
+                        if ack_count % max(1, int(ack_rollup_every)) == 0:
+                            sig_hash = _hash12(sig)
+                            tag = _parse_iso(ev_ts).strftime("%Y%m%d%H")
+                            idem = f"rtmem:ack-rollup:{sig_hash}:{tag}:{ack_count}"
+                            cand = {
+                                "candidate_id": f"cand_ack_{_hash12(idem)}",
+                                "event_id": ev.get("event_id"),
+                                "session_id": ev.get("session_id"),
+                                "turn_id": ev.get("turn_id"),
+                                "role": ev.get("role"),
+                                "risk_score": 22,
+                                "risk_level": "low",
+                                "value_score": 30,
+                                "reason_codes": ["ACK_ROLLUP"],
+                                "summary": f"工作流确认信号压缩: {ack_window_min}m 内 ack={ack_count}",
+                                "created_at": now_iso(),
+                                "idempotency_key": idem,
+                                "scheduler_job": {
+                                    "object_type": "reflect_job",
+                                    "object_id": f"rt_ack_rollup_{sig_hash}_{tag}",
+                                    "action": "reflect",
+                                    "run_at": now_iso(),
+                                    "priority": "low",
+                                    "max_attempts": 2,
+                                    "idempotency_key": idem,
+                                    "correlation_id": f"daemon_v0_2:ack_rollup:{sig_hash}",
+                                },
+                            }
+                            ev_candidates.append(cand)
+                            ack_rollup_candidates += 1
+                        else:
+                            ack_compressed += 1
+
+                    else:
+                        ev_candidates = extract_candidates(ev, min_content_len=6, max_candidates=max_candidates_per_event)
+
                     candidates += len(ev_candidates)
 
                     for cand in ev_candidates:
@@ -545,6 +755,9 @@ def process_batch(
         dedup_enqueues=dedup_enqueues,
         throttled=throttled,
         skipped_hwm=skipped_hwm,
+        system_repeat_alerts=system_repeat_alerts,
+        ack_compressed=ack_compressed,
+        ack_rollup_candidates=ack_rollup_candidates,
     )
 
 
@@ -563,6 +776,12 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--session-rate-limit-per-min", type=int, default=20)
     p.add_argument("--scheduler-queue-high-watermark", type=int, default=500)
     p.add_argument("--max-candidates-per-event", type=int, default=1)
+
+    # time-dimension strategy
+    p.add_argument("--system-repeat-window-min", type=int, default=60)
+    p.add_argument("--system-repeat-threshold", type=int, default=3)
+    p.add_argument("--ack-window-min", type=int, default=120)
+    p.add_argument("--ack-rollup-every", type=int, default=10)
 
     p.add_argument("--poll-interval-sec", type=float, default=1.0)
     p.add_argument("--max-batch", type=int, default=200)
@@ -606,6 +825,9 @@ def main():
     dedup_enqueues_this_run = 0
     throttled_this_run = 0
     skipped_hwm_this_run = 0
+    system_repeat_alerts_this_run = 0
+    ack_compressed_this_run = 0
+    ack_rollup_candidates_this_run = 0
 
     loops = 0
     stopped_by_signal = False
@@ -669,6 +891,10 @@ def main():
                 scheduler_queue_high_watermark=max(1, int(args.scheduler_queue_high_watermark)),
                 enqueue_min_risk_level=args.enqueue_min_risk_level,
                 max_candidates_per_event=max(1, int(args.max_candidates_per_event)),
+                system_repeat_window_min=max(1, int(args.system_repeat_window_min)),
+                system_repeat_threshold=max(1, int(args.system_repeat_threshold)),
+                ack_window_min=max(1, int(args.ack_window_min)),
+                ack_rollup_every=max(1, int(args.ack_rollup_every)),
             )
 
             processed_this_run += br.processed
@@ -680,6 +906,9 @@ def main():
             dedup_enqueues_this_run += br.dedup_enqueues
             throttled_this_run += br.throttled
             skipped_hwm_this_run += br.skipped_hwm
+            system_repeat_alerts_this_run += br.system_repeat_alerts
+            ack_compressed_this_run += br.ack_compressed
+            ack_rollup_candidates_this_run += br.ack_rollup_candidates
 
             offset = br.offset
             last_event_id = br.last_event_id
@@ -702,8 +931,8 @@ def main():
             INSERT INTO daemon_batches(
                 mode, started_at, ended_at, processed, normalized, deduped_events,
                 candidates, enqueued, dedup_enqueues, throttled, skipped_hwm,
-                errors, offset
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                errors, offset, system_repeat_alerts, ack_compressed, ack_rollup_candidates
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 "poll" if args.mode == "tail" else args.mode,
@@ -719,6 +948,9 @@ def main():
                 skipped_hwm_this_run,
                 errors_this_run,
                 offset,
+                system_repeat_alerts_this_run,
+                ack_compressed_this_run,
+                ack_rollup_candidates_this_run,
             ),
         )
         c.commit()
@@ -744,6 +976,9 @@ def main():
             "dedup_enqueues_this_run": dedup_enqueues_this_run,
             "throttled_this_run": throttled_this_run,
             "skipped_hwm_this_run": skipped_hwm_this_run,
+            "system_repeat_alerts_this_run": system_repeat_alerts_this_run,
+            "ack_compressed_this_run": ack_compressed_this_run,
+            "ack_rollup_candidates_this_run": ack_rollup_candidates_this_run,
             "processed_total": processed_total,
             "offset": offset,
             "last_event_id": last_event_id,
