@@ -17,6 +17,7 @@ D4 (prototype-grade):
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import os
 import signal
@@ -47,6 +48,7 @@ from core.strategies import get_strategy, CandidateScore  # noqa: E402
 DEFAULT_EVENTS_FILE = ROOT / "data" / "fixtures" / "daemon_events_v0_2.jsonl"
 DEFAULT_STATE_DB = ROOT / "data" / "daemon" / "memory_observer_v0_2.sqlite"
 DEFAULT_PID_FILE = ROOT / "data" / "daemon" / "memory_observer_v0_2.pid"
+DEFAULT_LOCK_FILE = ROOT / "data" / "daemon" / "memory_observer_v0_2.lock"
 
 RISK_RANK = {"low": 1, "medium": 2, "high": 3}
 
@@ -171,28 +173,79 @@ def is_pid_running(pid: int) -> bool:
     return True
 
 
-def acquire_pid_file(pid_file: Path):
+def acquire_pid_file(pid_file: Path, lock_file: Path) -> int:
+    """Atomically acquire daemon lock via fcntl.flock.
+
+    Opens the lock file (creating it if needed) and acquires an exclusive
+    non-blocking lock (LOCK_EX | LOCK_NB).  Only after the lock is held do
+    we read the PID file and check whether a previous daemon is still alive.
+
+    Returns the file descriptor of the lock file, which MUST be passed to
+    release_pid_file() to release the lock and close the fd.
+
+    Raises RuntimeError if another daemon is already running.
+    """
+    ensure_parent(lock_file)
     ensure_parent(pid_file)
-    if pid_file.exists():
-        raw = pid_file.read_text(encoding="utf-8", errors="ignore").strip()
-        try:
-            existing_pid = int(raw)
-        except ValueError:
-            existing_pid = -1
 
-        if is_pid_running(existing_pid):
-            raise RuntimeError(f"pid file locked by running process: pid={existing_pid}, pid_file={pid_file}")
-        pid_file.unlink(missing_ok=True)
+    lock_fd = os.open(str(lock_file), os.O_RDWR | os.O_CREAT, 0o644)
 
-    pid_file.write_text(str(os.getpid()), encoding="utf-8")
-
-
-def release_pid_file(pid_file: Path):
     try:
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except (IOError, OSError) as exc:
+            # EWOULDBLOCK / EAGAIN — lock is held by another live process
+            os.close(lock_fd)
+            raise RuntimeError(
+                f"lock file is held by another process: lock_file={lock_file}. "
+                f"Underlying error: {exc}"
+            ) from exc
+
+        # Now we hold the lock exclusively — check-and-write is atomic.
         if pid_file.exists():
-            pid_file.unlink()
+            raw = pid_file.read_text(encoding="utf-8", errors="ignore").strip()
+            try:
+                existing_pid = int(raw)
+            except ValueError:
+                existing_pid = -1
+
+            if is_pid_running(existing_pid):
+                fcntl.flock(lock_fd, fcntl.LOCK_UN)
+                os.close(lock_fd)
+                raise RuntimeError(
+                    f"pid file locked by running process: pid={existing_pid}, pid_file={pid_file}"
+                )
+            # stale or invalid PID — remove so we can write the new one
+            pid_file.unlink(missing_ok=True)
+
+        pid_file.write_text(str(os.getpid()), encoding="utf-8")
+        return lock_fd
+
+    except Exception:
+        # Don't leak the fd on any unexpected error
+        try:
+            os.close(lock_fd)
+        except OSError:
+            pass
+        raise
+
+
+def release_pid_file(pid_file: Path, lock_file: Path, lock_fd: int):
+    """Release the fcntl lock, close the lock file descriptor, and remove the PID file."""
+    try:
+        fcntl.flock(lock_fd, fcntl.LOCK_UN)
     except OSError:
         pass
+    finally:
+        try:
+            os.close(lock_fd)
+        except OSError:
+            pass
+        # Clean up PID file so the next start doesn't see a stale PID
+        try:
+            pid_file.unlink(missing_ok=True)
+        except OSError:
+            pass
 
 
 def db_conn(db_path: Path) -> sqlite3.Connection:
@@ -818,6 +871,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--events-file", default=str(DEFAULT_EVENTS_FILE))
     p.add_argument("--state-db", default=str(DEFAULT_STATE_DB))
     p.add_argument("--pid-file", default=str(DEFAULT_PID_FILE))
+    p.add_argument("--lock-file", default=str(DEFAULT_LOCK_FILE), help="flock lock file for atomic pid check")
 
     p.add_argument("--scheduler-db", default="", help="optional scheduler db path for enqueue")
     p.add_argument("--enable-enqueue", action="store_true", help="legacy switch; use --feature-flag on/partial for enqueue")
@@ -849,6 +903,7 @@ def main():
     events_file = Path(args.events_file).expanduser().resolve()
     state_db = Path(args.state_db).expanduser().resolve()
     pid_file = Path(args.pid_file).expanduser().resolve()
+    lock_file = Path(args.lock_file).expanduser().resolve()
 
     scheduler_db = Path(args.scheduler_db).expanduser().resolve() if args.scheduler_db else None
 
@@ -866,6 +921,7 @@ def main():
 
     c: sqlite3.Connection | None = None
     sc: sqlite3.Connection | None = None
+    lock_fd: int | None = None
 
     processed_this_run = 0
     errors_this_run = 0
@@ -886,7 +942,7 @@ def main():
     batch_started = now_iso()
 
     try:
-        acquire_pid_file(pid_file)
+        lock_fd = acquire_pid_file(pid_file, lock_file)
 
         c = db_conn(state_db)
         init_db(c)
@@ -1018,6 +1074,7 @@ def main():
             "partial_session_allowlist_size": len(partial_session_allowlist),
             "enqueue_enabled": enqueue_enabled,
             "pid_file": str(pid_file),
+            "lock_file": str(lock_file),
             "processed_this_run": processed_this_run,
             "errors_this_run": errors_this_run,
             "normalized_this_run": normalized_this_run,
@@ -1052,7 +1109,8 @@ def main():
             c.close()
         if sc is not None:
             sc.close()
-        release_pid_file(pid_file)
+        if lock_fd is not None:
+            release_pid_file(pid_file, lock_file, lock_fd)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 # MindKernel TODO
 
-_Last updated: 2026-03-10 09:00 (Asia/Shanghai)_
+_Last updated: 2026-03-19 09:00 (Asia/Shanghai)_
 
 ## P0（近期必须推进）
 
@@ -169,6 +169,61 @@ _Last updated: 2026-03-10 09:00 (Asia/Shanghai)_
 - [x] 风险画像保持稳定：外部依赖风险（中）持续；安装流程文档/脚本漂移风险维持中低并待 CI smoke 固化。
 - [x] 观察点：本地有未提交修改（realtime_memory_candidate_v0_2.py、daemon_v0_2.py、observation_report_v0_2.py、TODO.md、checklists/），建议尽快合入或落档说明。
 
+## 今日巡检（2026-03-12）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新仍为 6.26（2026-02-21），截至今日无新增讨论条目。
+- [x] 核对代码基线增量：`main` 本地新增 5 个提交未推送（`d6822f1`~`44a6386`，v0.2 阈值策略/架构/记忆提取）；`origin/main` 停留在 `a2b758a`。
+- 收口状态 [x] TODO保持一致：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [ ] v0.2 运行观察 Day2~Day10：daemon 自 2026-03-03T03:48:10Z 后未运行，需补 run-once + observation 报告（**已延期 10 天，需决策是否继续或重新规划**）。
+- [x] 风险画像保持稳定：外部依赖风险（中）持续；安装流程文档/脚本漂移风险维持中低并待 CI smoke 固化。
+- [x] 观察点：本地有 5 个未推送提交（v0.2 阈值策略演进），建议评估后推送远端。
+
+## 今日巡检（2026-03-13）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新仍为 6.26（2026-02-21），截至今日无新增讨论条目。
+- [x] 核对代码基线增量：`main` 本地保持 5 个未推送提交（`d6822f1`~`44a6386`）；`origin/main` 停留在 `a2b758a`。
+- [x] TODO 收口状态保持一致：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [ ] v0.2 运行观察 Day2~Day11：daemon 自 2026-03-03T03:48:10Z 后未运行，需补 run-once + observation 报告（**已延期 11 天，需决策是否继续或重新规划**）。
+- [x] 风险画像保持稳定：外部依赖风险（中）持续；安装流程文档/脚本漂移风险维持中低并待 CI smoke 固化。
+- [x] 观察点：本地有 5 个未推送提交待评估，建议本周内完成 push 或落档说明。
+
+## 今日巡检（2026-03-15）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新仍为 6.26（2026-02-21），截至今日无新增讨论条目。
+- [x] 核对代码基线增量：`origin/main` 停留在 `a2b758a`（自 3 月 5 日起无更新）。
+- [x] TODO 收口状态保持一致：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [ ] v0.2 运行观察 Day2~Day13：daemon 自 2026-03-03T03:48:10Z 后未运行，需补 run-once + observation 报告（**已延期 13 天，需决策是否继续或重新规划**）。
+- [x] 风险画像保持稳定：外部依赖风险（中）持续；安装流程文档/脚本漂移风险维持中低并待 CI smoke 固化。
+
+## 今日巡检（2026-03-16）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新仍为 6.26（2026-02-21），截至今日无新增讨论条目。
+- [x] 核对代码基线增量：`origin/main` 停留在 `a2b758a`；本地领先 5 个提交未推送（v0.2 阈值策略演进）。
+- [x] TODO 收口状态保持一致：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [ ] v0.2 运行观察 Day2~Day14：daemon 自 2026-03-03T03:48:10Z 后未运行，需补 run-once + observation 报告（**已延期 14 天，需决策是否继续或重新规划**）。
+- [x] 风险画像保持稳定：外部依赖风险（中）持续；安装流程文档/脚本漂移风险维持中低并待 CI smoke 固化。
+
+## 今日巡检（2026-03-18）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新仍为 6.26（2026-02-21），截至今日无新增讨论条目。
+- [x] 核对代码基线增量：`origin/main` 停留在 `a2b758a`；本地领先 5 个提交未推送（v0.2 阈值策略演进）。
+- [x] TODO 收口状态保持一致：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [ ] v0.2 运行观察 Day2~Day16：daemon 自 2026-03-03T03:48:10Z 后未运行，需补 run-once + observation 报告（**已延期 16 天，需决策是否继续或重新规划**）。
+- [x] 风险画像保持稳定：外部依赖风险（中）持续；安装流程文档/脚本漂移风险维持中低并待 CI smoke 固化。
+
+## 今日巡检（2026-03-19）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新仍为 6.26（2026-02-21），截至今日无新增讨论条目。
+- [x] 核对代码基线增量：`origin/main` 停留在 `a2b758a`（自 3 月 5 日起无更新）；本地领先 5 个提交未推送（`d6822f1`~`44a6386`，v0.2 阈值策略演进）。
+- [x] TODO 收口状态保持一致：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [x] **纠偏**：回顾 reports/daemon/ 发现 Day2~Day7 实为 2026-03-11 完成（observation_20260311_day2/day3/day4/day7/extened.md），已产出 metrics：
+  - 48h 窗口 batches=23，processed=1386，candidates=160，enqueued=0，errors=0
+  - system_repeat_alerts=18（注意：存在系统重复事件告警）
+- [ ] v0.2 运行观察 Day8~Day17：自 2026-03-11 extended 之后无新 observation 报告；daemon PID 文件（pid=49026）最后触摸于 2026-03-18 23:08，**需确认 daemon 当前运行状态**。
+- [x] 风险画像保持稳定：外部依赖风险（中）持续；安装流程文档/脚本漂移风险维持中低并待 CI smoke 固化。
+- [x] 本地未推送提交已达 5 个（v0.2 阈值策略），建议本周内决策 push 或落档说明。
+- [ ] **行动项**：daemon 实际运行状态待确认；v0.2 阈值策略代码待合入主线；Day8~Day17 observation 缺口需补录或决策归档。
+
 ## 下一步（运行期）
 
 > 参考：`docs/06-execution/release-runbook-v0.1.1-stabilized.md`
@@ -187,20 +242,19 @@ _Last updated: 2026-03-10 09:00 (Asia/Shanghai)_
    - [x] 完成 D6：门禁分层与夜间回放策略固化。
 4. 准备下一阶段（v0.2）需求梳理：外部依赖熔断/降级与长期稳定性观测（韧性原型已落地，待运行观察与阈值固化）。
 5. 将 installer + README 安装指引纳入发布手册与 CI smoke 安装验证（避免文档/脚本漂移）。
+6. **新增**：v0.2 daemon 观察缺口 10 天（Day8~Day17），建议本周内：① 确认 daemon 当前运行状态；② 完成观察补录；③ 决策 v0.2 代码合入计划。
 
 
-## v0.2 运行观察（7天）
+## v0.2 运行观察（实际完成情况）
 
 - [x] Day1（2026-03-03）：已启动观察基线（shadow + run-once）。
   - state_db: `data/daemon/memory_observer_v0_2.sqlite`
   - observation: `reports/daemon/observation_20260303_034814.md`
   - 指标快照：batches=2, processed=955, candidates=52, errors=0
-- [ ] Day2：增量 run-once + observation 报告
-- [ ] Day3：增量 run-once + observation 报告
-- [ ] Day4：增量 run-once + observation 报告
-- [ ] Day5：增量 run-once + observation 报告
-- [ ] Day6：增量 run-once + observation 报告
-- [ ] Day7：增量 run-once + observation 报告 + 阈值固化复盘
+- [x] Day2~Day7（2026-03-11，已补录）：observation_20260311_day2/day3/day4/day7 + extended.md
+  - 48h 窗口：batches=23, processed=1386, candidates=160, enqueued=0, errors=0
+  - 告警：system_repeat_alerts=18（系统重复事件需关注）
+- [ ] Day8~Day17（2026-03-12~03-19）：无新 observation 报告（**缺口 10 天**，daemon PID 最后触摸 03-18 23:08 状态待确认）
 
 ## 风险追踪
 
