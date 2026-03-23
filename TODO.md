@@ -1,6 +1,6 @@
 # MindKernel TODO
 
-_Last updated: 2026-03-19 09:00 (Asia/Shanghai)_
+_Last updated: 2026-03-21 09:00 (Asia/Shanghai)_
 
 ## P0（近期必须推进）
 
@@ -223,6 +223,29 @@ _Last updated: 2026-03-19 09:00 (Asia/Shanghai)_
 - [x] 风险画像保持稳定：外部依赖风险（中）持续；安装流程文档/脚本漂移风险维持中低并待 CI smoke 固化。
 - [x] 本地未推送提交已达 5 个（v0.2 阈值策略），建议本周内决策 push 或落档说明。
 - [ ] **行动项**：daemon 实际运行状态待确认；v0.2 阈值策略代码待合入主线；Day8~Day17 observation 缺口需补录或决策归档。
+
+## 今日巡检（2026-03-22）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新仍为 6.26（2026-02-21），截至今日无新增讨论条目。
+- [x] 核对代码基线增量：`origin/main` 保持在 `4895332`（hobby/interest + metacognitive patterns）；本地与远端同步，无落后。
+- [x] TODO 收口状态保持一致：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [x] daemon 健康检查通过（PID 56005，launchd 托管）：batches=11, candidates=32, enqueued=2, scheduler jobs=2, errors=0，与 03-21 持平。
+- [x] adapter 运行正常（PID 49000），events file 116 lines（31078 bytes），无 error。
+- [x] v0.2 运行观察（Day21）：daemon 无中断，候选者库 enqueued=2，legacy_dirty=30；最近 observation 仍停留 03-19（**缺口 3 天**）。
+- [x] openclaw integration 进度确认：MCP Server ✅ / 三个核心工具 ✅ / mcporter 配置 ✅ / launchd 自启 ✅ / Daemon 对接 ✅ / Reflect Worker ✅；唯一待办：经验卡片写回 OpenClaw 对话策略（🔲 未启动）。
+- [x] 未跟踪文件仍需决策：TODO.md / data/daemon/ / data/fixtures/daemon_events_openclaw.jsonl / docs/openclaw-integration.md / plugins/ / tools/daemon/openclaw_event_adapter.py / tools/daemon/run_observer_with_openclaw.py。
+- [x] 风险画像保持稳定：外部依赖风险（中）持续；安装流程文档/脚本漂移风险维持中低；当前无 P0 阻塞。
+
+## 今日巡检（2026-03-23）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新仍为 6.26（2026-02-21），截至今日无新增讨论条目。
+- [x] 核对代码基线增量：`origin/main` 保持在 `4895332`；本地与远端同步，无落后；唯一未提交修改为 TODO.md（本次巡检更新）。
+- [x] TODO 收口状态保持一致：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [x] daemon 健康检查通过（PID 56005，launchd 托管）：batches=11, candidates=32, enqueued=2, scheduler jobs=2, errors=0，与 03-22 持平。
+- [x] adapter 运行正常（PID 49000），events file 116 lines（31078 bytes），无 error。
+- [x] v0.2 运行观察（Day22）：daemon 无中断，候选者库 enqueued=2；最近 observation 仍停留 03-19（**缺口 4 天**）。
+- [x] openclaw integration 唯一待办（经验卡片写回 OpenClaw 对话策略）仍未启动，建议本周决策是否继续。
+- [x] 风险画像保持稳定：外部依赖风险（中）持续；安装流程文档/脚本漂移风险维持中低；当前无 P0 阻塞。
 
 ## 下一步（运行期）
 
