@@ -168,6 +168,9 @@ def ingest_cognition(c: sqlite3.Connection, cognition_payload: dict, actor_id: s
 
 def _decide(cognition_payload: dict, risk_tier: str | None = None):
     epistemic_state = cognition_payload["epistemic_state"]
+    # "derived" 是从 experience 晋升来的认知，视同 supported
+    if epistemic_state == "derived":
+        epistemic_state = "supported"
     rt = risk_tier or cognition_payload.get("risk_tier", "medium")
     impact = cognition_payload.get("impact_tier", "medium")
 
@@ -246,6 +249,25 @@ def cognition_to_decision(
         raise ValueError(f"cognition not found: {cognition_id}")
 
     cognition_payload = json.loads(row["payload_json"])
+
+    # 幂等去重：检查是否已有该 cognition 的 decision trace
+    existing_rows = c.execute(
+        "SELECT id, final_outcome, payload_json FROM decision_traces WHERE payload_json LIKE ?",
+        (f'%"{cognition_id}"%',),
+    ).fetchall()
+    if existing_rows:
+        existing = existing_rows[0]
+        existing_payload = json.loads(existing["payload_json"])
+        return {
+            "cognition_id": cognition_id,
+            "decision_trace_id": existing["id"],
+            "decision_id": existing_payload.get("decision_id"),
+            "risk_tier": existing_payload.get("risk_tier"),
+            "decision_mode": existing_payload.get("decision_mode"),
+            "final_outcome": existing["final_outcome"],
+            "duplicate": True,
+        }
+
     decision = _decide(cognition_payload, risk_tier)
 
     dt_id = f"dt_{uuid.uuid4().hex[:12]}"

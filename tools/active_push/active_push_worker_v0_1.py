@@ -87,22 +87,32 @@ def _append_push_buffer(entry: dict):
 
 
 def _estimate_confidence(payload: dict) -> float:
-    """从 decision trace payload 估算置信度（0.0~1.0）"""
+    """从 decision trace payload 估算置信度（0.0~1.0）
+
+    C→D schema 使用 final_outcome: executed/limited（不是 completed）。
+    E→D legacy 路径使用 final_outcome: completed。
+    """
     outcome = payload.get("final_outcome", "")
     mode = payload.get("decision_mode", "")
     epistemic = payload.get("epistemic_state", "")
 
-    if outcome == "completed" and mode == "normal" and epistemic == "supported":
+    # 完整闭环 + 正常模式 → 高置信度
+    if outcome in ("completed", "executed") and mode == "normal" and epistemic == "supported":
         return 0.92
-    elif outcome == "completed" and mode == "normal":
+    if outcome in ("completed", "executed") and mode == "normal":
         return 0.88
-    elif outcome == "limited" and epistemic == "supported":
+    # executed 但 epistemic 不明 → 适度置信
+    if outcome == "executed":
+        return 0.80
+    if outcome == "limited" and epistemic == "supported":
+        return 0.78
+    if outcome == "limited":
         return 0.72
-    elif outcome == "escalated":
+    if outcome == "escalated":
         return 0.60
-    elif outcome == "abstained":
+    if outcome == "abstained":
         return 0.40
-    elif outcome == "blocked":
+    if outcome == "blocked":
         return 0.20
     return 0.50
 

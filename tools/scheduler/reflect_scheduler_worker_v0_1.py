@@ -28,6 +28,8 @@ from core.persona_confirmation_queue_v0_1 import (  # noqa: E402
     execute_apply_plan,
     init_db as init_pcq_db,
 )
+from core import cognition_engine  # noqa: E402
+from tools.pipeline import cognition_decision_v0_1  # noqa: E402
 from core.reflect_gate_v0_1 import route_proposals  # noqa: E402
 
 
@@ -154,6 +156,7 @@ def process_reflect_job(
     queue_deadline_minutes: int,
     queue_fallback_policy: str,
     renew_lease_fn=None,
+    worker_id: str = "reflect-worker",
 ):
     job_id = str(job["job_id"])
     job_dir = reports_dir / job_id
@@ -211,6 +214,38 @@ def process_reflect_job(
     )
     _write_json(job_dir / "apply_exec.json", apply_exec)
 
+    # ── E→C→D 闭环 ────────────────────────────────────────────────
+    try:
+        me_conn = cognition_engine.conn(db)
+        ce_result = cognition_engine.batch_experience_to_cognition(
+            me_conn,
+            since_days=since_days,
+            actor_id=f"reflect-worker-{worker_id}",
+        )
+        cd_results = []
+        for r in ce_result.get("results", []):
+            if r.get("skipped") or r.get("error"):
+                continue
+            cog_id = r.get("cognition_id")
+            if not cog_id:
+                continue
+            try:
+                cd_res = cognition_decision_v0_1.cognition_to_decision(
+                    me_conn,
+                    cognition_id=cog_id,
+                    request_ref=f"reflect-{job_id}",
+                    risk_tier=None,
+                    actor_id=f"reflect-worker-{worker_id}",
+                )
+                cd_results.append(cd_res)
+            except Exception as e:
+                cd_results.append({"cognition_id": cog_id, "error": str(e)})
+        cognition_decision_ok = sum(1 for x in cd_results if not x.get("error"))
+    except Exception as e:
+        ce_result = {"applied": 0, "skipped": 0, "failed": 0, "error": str(e)}
+        cd_results = []
+        cognition_decision_ok = 0
+
     summary = {
         "ok": True,
         "job_id": job_id,
@@ -233,6 +268,11 @@ def process_reflect_job(
             "deduplicated": apply_exec.get("deduplicated", 0),
             "skipped": apply_exec.get("skipped", 0),
             "failed": apply_exec.get("failed", 0),
+        },
+        "cognition_decision": {
+            "cognitions_applied": ce_result.get("applied", 0) if isinstance(ce_result, dict) else 0,
+            "cognitions_skipped": ce_result.get("skipped", 0) if isinstance(ce_result, dict) else 0,
+            "decisions_created": cognition_decision_ok,
         },
         "artifacts_dir": str(job_dir),
     }
@@ -316,6 +356,7 @@ def run_loop(args):
                     queue_deadline_minutes=max(1, int(args.queue_deadline_minutes)),
                     queue_fallback_policy=args.queue_fallback_policy,
                     renew_lease_fn=_renew_lease,
+                    worker_id=args.worker_id,
                 )
                 sch.ack(
                     c,
