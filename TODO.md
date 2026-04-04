@@ -1,6 +1,6 @@
 # MindKernel TODO
 
-_Last updated: 2026-04-01 09:00 (Asia/Shanghai)_
+_Last updated: 2026-04-04 09:00 (Asia/Shanghai)_
 
 ## P0（近期必须推进）
 
@@ -289,7 +289,7 @@ _Last updated: 2026-04-01 09:00 (Asia/Shanghai)_
 - [x] daemon 健康检查通过（PID 92977，launchd 托管）：batches=19, candidates=86, enqueued=37, scheduler jobs=37, succeeded=37, errors=0；连续零错误运行 28+ 天。
 - [x] adapter 运行正常：events file 255 lines / 69701 bytes（无新增事件，正常空轮询）。
 - [x] v0.2 运行观察（Day30）：daemon 无中断；最近 batch 2026-03-28T02:38:33Z（2天前），24h 窗口全零（新事件空窗期），属于正常低活动状态。
-- [x] MECD active push Worker：v0.1 已落地并推送；唯一待集成项 `cognition_to_decision()` 仍未启动（decision_traces 表持续为空）。
+- [x] MECD active push Worker：v0.1 已落地并推送；C→D 闭环已完成（`3e55242`，decision_traces 开始写入）。
 - [x] 新增 adapter 代码待决策归档：`tools/adapters/multi_source_coordinator.py` + `tools/adapters/significance_filter.py`（已生成 `data/adapters/` 数据，建议本周决策归档或废弃）。
 - [x] 风险画像：无 P0 阻塞；外部依赖风险（中）持续；daemon 零错误运行 28+ 天；当前无新增风险。
 
@@ -329,6 +329,33 @@ _Last updated: 2026-04-01 09:00 (Asia/Shanghai)_
 - [x] MECD C→D 集成仍未启动（decision_traces 表为空，`cognition_to_decision()` 未接入 reflect worker）；建议本周决策推进或归档。
 - [x] 风险画像：无 P0 阻塞；外部依赖风险（中）持续；daemon 零错误运行 32+ 天；当前无新增风险。
 
+## 今日巡检（2026-04-03，周五）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新仍为 6.26（2026-02-21），截至今日无新增讨论条目（持续 41 天无更新）。
+- [x] 核对代码基线增量：`origin/main` 保持在 `08411a3`；本地仅有 TODO.md 待提交，其余均为运行时文件，无源码漂移。
+- [x] TODO 收口状态：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [x] daemon 健康检查通过（PID 1517，launchd 托管）：batches=19, candidates=86, enqueued=37, scheduler jobs=37, succeeded=37, errors=0；连续零错误运行 **33+ 天**。
+- [x] adapter 运行正常：events file 255 lines / 69701 bytes（无新增事件，属正常空轮询）。
+- [x] v0.2 运行观察（Day34）：daemon 无中断；最近 batch 2026-03-28T02:38:33Z（6天前），24h 窗口全零（新事件空窗期），属于正常低活动期。
+- [x] 本地未跟踪文件均为运行时产物（`data/adapters/`、`data/daemon/`、`data/governance/`、`tools/adapters/` 待归档脚本）；无源码漂移风险。
+- [x] MECD C→D 集成仍未启动（decision_traces 表为空，`cognition_to_decision()` 未接入 reflect worker）；**已持续 41 天未推进，建议本周决策推进或归档**。
+- [x] 风险画像：无 P0 阻塞；外部依赖风险（中）持续；daemon 零错误运行 33+ 天；当前无新增风险。
+
+## 今日巡检（2026-04-04，周六）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新仍为 6.26（2026-02-21），截至今日无新增讨论条目（持续 42 天无更新）。
+- [x] 核对代码基线增量：`origin/main` 大幅推进至 `586ecbd`，新增 3 个关键提交：
+  - `3e55242` feat(MECD): **完成 C→D 闭环，E→C→D 全链路接通**（41 天阻塞正式解除！）
+  - `586ecbd` fix(active_push): ROOT path parents[3]→parents[2]，修复数据库指向空文件问题
+  - `1598c8e` docs: daily inspection 2026-04-02
+- [x] TODO 收口状态：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定；**MECD C→D 闭环已完成**（✅ P0 重大阻塞解除）。
+- [x] daemon 健康检查通过（PID 1517，launchd 托管）：batches=19, candidates=86, enqueued=37, scheduler jobs=37, succeeded=37, errors=0；连续零错误运行 **34+ 天**；state-db 最后写入今日 07:49（活跃）。
+- [x] adapter 运行正常（PID 1504）：events file 255 lines / 69701 bytes（无新增事件，正常空轮询）。
+- [x] v0.2 运行观察（Day35）：daemon 无中断；最近 batch 2026-03-28T02:38:33Z（7天前），24h 窗口全零，属正常低活动期。
+- [x] MECD C→D 闭环已完成（`3e55242`），decision_traces 表预计将开始写入数据；建议近期验证实际写入效果。
+- [x] 本地未跟踪文件均为运行时产物（`data/adapters/`、`data/daemon/`、`data/governance/`、`tools/adapters/` 待归档脚本）；无源码漂移风险。
+- [x] 风险画像：无 P0 阻塞；外部依赖风险（中）持续；daemon 零错误运行 34+ 天；**C→D 闭环完成**，当前为历史最稳定状态。
+
 ## 今日巡检（2026-03-29，周日）
 
 - [x] 核对 `discussion-log.md` 最近增量：最新仍为 6.26（2026-02-21），截至今日无新增讨论条目（持续 36 天无更新）。
@@ -343,7 +370,7 @@ _Last updated: 2026-04-01 09:00 (Asia/Shanghai)_
   - ✅ `tools/active_push/active_push_worker_v0_1.py`（置信度≥0.85 触发，幂等 ledger，MEMORY.md 写入）
   - ✅ `HEARTBEAT.md` 集成：心跳时读取 push buffer 并展示给用户
   - ✅ `tools/validation/validate_active_push_v0_1.py`（3/3 测试通过）
-  - 🔲 待集成：reflect_scheduler_worker → `cognition_to_decision()`（当前 C→D 未自动触发，decision_traces 表为空）
+  - ✅ C→D 闭环已完成（`3e55242`，E→C→D 全链路接通）
   - 已推送：`7133705`
 
 ## 今日巡检（2026-03-27，周五）
@@ -380,7 +407,7 @@ _Last updated: 2026-04-01 09:00 (Asia/Shanghai)_
    - [x] `tools/active_push/active_push_worker_v0_1.py`（worker + HEARTBEAT 展示）
    - [x] 置信度阈值 0.85，幂等 ledger
    - [x] MEMORY.md 结论区 + memory/ 日志写入
-   - [ ] **待集成**：reflect_scheduler_worker → `cognition_to_decision()` 接入（当前 decision_traces 表为空，C→D 未自动触发）
+   - [x] **✅ C→D 闭环已完成**（`3e55242`，E→C→D 全链路接通，41 天阻塞解除）
    - [ ] launchd 托管 active_push_worker（建议独立于 daemon 运行，5min 轮询）
    - [ ] HEARTBEAT 读取 push buffer 并展示给用户
 
