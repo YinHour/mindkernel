@@ -1,6 +1,6 @@
 # MindKernel TODO
 
-_Last updated: 2026-04-04 09:00 (Asia/Shanghai)_
+_Last updated: 2026-04-08 09:00 (Asia/Shanghai)_
 
 ## P0（近期必须推进）
 
@@ -356,7 +356,45 @@ _Last updated: 2026-04-04 09:00 (Asia/Shanghai)_
 - [x] 本地未跟踪文件均为运行时产物（`data/adapters/`、`data/daemon/`、`data/governance/`、`tools/adapters/` 待归档脚本）；无源码漂移风险。
 - [x] 风险画像：无 P0 阻塞；外部依赖风险（中）持续；daemon 零错误运行 34+ 天；**C→D 闭环完成**，当前为历史最稳定状态。
 
-## 今日巡检（2026-03-29，周日）
+## 今日巡检（2026-04-06，周一）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新仍为 6.26（2026-02-21），截至今日无新增讨论条目（持续 **44 天**无更新）。
+- [x] 核对代码基线增量：`origin/main` 保持在 `ddbc635`；本地仅有 TODO.md 待提交，其余均为运行时文件，无源码漂移。
+- [x] TODO 收口状态：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [x] daemon 健康检查通过（PID 1517，launchd 托管）：batches=19, candidates=86, enqueued=37, scheduler jobs=37, succeeded=37, errors=0；连续零错误运行 **36+ 天**；无中断。
+- [x] adapter 运行正常：events file 255 lines / 69701 bytes（无新增事件，正常空轮询）。
+- [x] v0.2 运行观察（Day37，auto-report）：24h 窗口 batches=0, processed=0, candidates=0, errors=0，无告警；属于正常低活动/空事件期。
+- [x] MECD pipeline 进展确认：M=114(107c/7a/0ar), E=9(6c/3a), C=2, D=4(auto_applied=4)；全链路正常推进。
+- [x] 本地未跟踪文件均为运行时产物（`data/adapters/`、`data/daemon/`、`data/governance/`、`tools/adapters/` 待归档脚本）；无源码漂移风险。
+- [x] 风险画像：无 P0 阻塞；外部依赖风险（中）持续；daemon 零错误运行 36+ 天；当前无新增风险。
+
+## 今日巡检（2026-04-08，周三）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新仍为 6.27（2026-04-06，M1 做梦机制实现完成）；discussion-log 持续 2 天无新增。
+- [x] 核对代码基线增量：`origin/main` 保持在 `ddbc635`；本地 TODO.md 待提交，其余均为运行时文件，无源码漂移。
+- [x] TODO 收口状态：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [x] daemon 健康检查通过（launchd 托管）：batches=19, processed=1709, candidates=86, enqueued=37, errors=0；连续零错误运行 **39+ 天**；last_batch_at 更新至 2026-04-08T01:02:33Z（**今日活跃**）。
+- [x] adapter 运行正常：checkpoint offset=672633，events file 无新增事件（属正常空轮询）。
+- [x] M1 做梦状态确认：dreaming_actions_ledger 有 1 条 drive_conversation 记录（2026-04-06T02:10:44Z）；M2（ask_human/propose_task/drive_conversation 行动分发）仍未启动。
+- [x] MECD pipeline：mecd_registry.sqlite 无数据表（registry 未激活）；active_push_ledger 仅 4 行，无近期 push 记录。
+- [x] 本地未跟踪文件均为运行时产物（`data/adapters/` 待归档、`core/dreaming_scheduler.py` 与设计一致性待确认）；无源码漂移风险。
+- [x] **行动项**：① TODO.md 本次巡检提交；② M2 行动分发（ask_human Telegram / propose_task Things / drive_conversation buffer）需决策是否启动；③ `dreaming_scheduler.py` 与 M1 设计一致性待确认。
+- [x] 风险画像：无 P0 阻塞；外部依赖风险（中）持续；daemon 零错误运行 39+ 天；当前无新增风险。
+
+## 今日巡检（2026-04-07，周二）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新为 6.27（2026-04-06，M1 做梦机制实现完成）；discussion-log 终于打破 44 天沉默！
+- [x] 核对代码基线增量：`origin/main` 保持在 `ddbc635`；本地 TODO.md + discussion-log.md 待提交，其余均为运行时文件，无源码漂移。
+- [x] TODO 收口状态：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [x] daemon 健康检查通过（launchd 托管）：batches=19, candidates=86, enqueued=37, scheduler jobs=37, succeeded=37, errors=0；连续零错误运行 **38+ 天**；无中断。
+- [x] adapter 运行正常：events file 255 lines / 69701 bytes（无新增事件，正常空轮询）。
+- [x] v0.2 运行观察（Day39，auto-report）：24h 窗口 batches=0, processed=0, candidates=0, errors=0，无告警；属于正常低活动/空事件期。
+- [x] M1 做梦机制已完成（6.27 条目），包括 dreaming_state/store/preprocessor/prompt/worker/action_router + launchd plist；端到端 GLM-4-flash 验证通过。
+- [x] 本地未跟踪文件：7 个 dreaming 核心文件（`core/dreaming_*.py`）+ `core/dreaming_scheduler.py`（与 M1 plan 的 launchd plist 名称差异待确认）；`data/adapters/` 待归档脚本。
+- [x] **行动项**：① 本地 TODO.md + discussion-log.md 待提交；② `core/dreaming_scheduler.py` 与 M1 设计一致性待确认（名称差异）；③ M2 下一步行动分发（ask_human/propose_task/drive_conversation）待启动。
+- [x] 风险画像：无 P0 阻塞；外部依赖风险（中）持续；daemon 零错误运行 38+ 天；当前无新增风险。
+
+## 今日巡检（2026-04-05，周日）
 
 - [x] 核对 `discussion-log.md` 最近增量：最新仍为 6.26（2026-02-21），截至今日无新增讨论条目（持续 36 天无更新）。
 - [x] 核对代码基线增量：`origin/main` 更新到 `cc626e4`（feat: context-aware retain — semantic closure detection + topic segmentation + LLM type correction）；本地 TODO.md 待提交，源码无漂移。
