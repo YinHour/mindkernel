@@ -193,6 +193,83 @@ def _write_experience_log(entry: dict):
         log_path.write_text(header + block + "\n", encoding="utf-8")
 
 
+def _dreaming_shown_ids_path() -> Path:
+    return ROOT / "data" / "governance" / "dreaming_shown_ids.json"
+
+
+def _load_dreaming_shown() -> set:
+    p = _dreaming_shown_ids_path()
+    if not p.exists():
+        return set()
+    try:
+        return set(json.loads(p.read_text()))
+    except Exception:
+        return set()
+
+
+def _save_dreaming_shown(ids: set):
+    p = _dreaming_shown_ids_path()
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(sorted(ids)))
+
+
+def scan_dreaming_buffer() -> list[dict]:
+    """
+    读取 active_push_buffer 中 source="dreaming" 的待展示条目，
+    输出 → 前缀供 heartbeat 展示，幂等跳过已 shown 的条目。
+    """
+    shown = _load_dreaming_shown()
+    remaining = []
+    pushed = []
+
+    if not PUSH_BUFFER.exists():
+        return pushed
+
+    for line in PUSH_BUFFER.read_text().splitlines():
+        if not line.strip():
+            continue
+        try:
+            entry = json.loads(line)
+        except Exception:
+            remaining.append(line)
+            continue
+
+        if entry.get("source") != "dreaming":
+            remaining.append(line)
+            continue
+
+        entry_id = entry.get("id", "")
+        if entry_id in shown:
+            remaining.append(line)
+            continue
+
+        # New dreaming entry — output for heartbeat
+        text = entry.get("text", "")
+        topic = entry.get("topic", "")
+        urgency = entry.get("urgency", "medium")
+        entry_type = entry.get("type", "dreaming")
+
+        if entry_type == "emotion_action":
+            prefix = "💬"
+        elif entry_type == "association":
+            prefix = "🔗"
+        elif entry_type == "task_activation":
+            prefix = "🎯"
+        else:
+            prefix = "🌙"
+
+        print(f"  → {prefix} [{urgency}] {text[:200]}")
+
+        shown.add(entry_id)
+        pushed.append(entry)
+
+    # Rewrite buffer without shown dreaming entries
+    # (Keep non-dreaming entries intact)
+    PUSH_BUFFER.write_text("\n".join(remaining) + "\n")
+    _save_dreaming_shown(shown)
+    return pushed
+
+
 def scan_decision_traces(db_path: Path, dry_run: bool = True) -> list[dict]:
     """扫描近 24 小时新 decision traces，触发主动推送"""
     conn = sqlite3.connect(str(db_path))
@@ -309,6 +386,11 @@ def main():
                 print(f"[active_push] DB table 'decision_traces' not ready yet (MECD pipeline pending). Skipping.")
             else:
                 raise
+
+        # Also scan dreaming buffer for pending action dispatches
+        dreaming_pushes = scan_dreaming_buffer()
+        if dreaming_pushes:
+            print(f"[dreaming] Presented {len(dreaming_pushes)} action(s) from dreaming buffer.")
 
 
 if __name__ == "__main__":
