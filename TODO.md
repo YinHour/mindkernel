@@ -1,6 +1,6 @@
 # MindKernel TODO
 
-_Last updated: 2026-04-15 09:00 (Asia/Shanghai)_
+_Last updated: 2026-04-18 09:00 (Asia/Shanghai)_
 
 ## P0（近期必须推进）
 
@@ -457,8 +457,8 @@ _Last updated: 2026-04-15 09:00 (Asia/Shanghai)_
    - [x] 置信度阈值 0.85，幂等 ledger
    - [x] MEMORY.md 结论区 + memory/ 日志写入
    - [x] **✅ C→D 闭环已完成**（`3e55242`，E→C→D 全链路接通，41 天阻塞解除）
-   - [ ] launchd 托管 active_push_worker（建议独立于 daemon 运行，5min 轮询）
-   - [ ] HEARTBEAT 读取 push buffer 并展示给用户
+   - [x] launchd 托管 active_push_worker（建议独立于 daemon 运行，5min 轮询）
+   - [x] HEARTBEAT 读取 push buffer 并展示给用户
 
 
 ## v0.2 运行观察（实际完成情况）
@@ -653,3 +653,16 @@ MindKernel 记忆治理验收清单 v1（20 条）
 - [x] 本地未跟踪文件均为运行时产物（`core/dreaming_*.py` 待归档、`data/adapters/` 待归档、`tools/adapters/` 待归档、`launchd/` 待归档）；无源码漂移风险。
 - [x] **行动项**：① TODO.md 本次巡检提交；② discussion-log 无增量 10 天，建议补档 M2 进展（M2 ask_human Telegram 实现 + drive_conversation 状态）或归档 6.27 条目；③ 大量运行时产物待归档（dreaming/adapters 各一批，低优先级）。
 - [x] 风险画像：无 P0 阻塞；外部依赖风险（中）持续；daemon 零错误运行 48+ 天（历史新高）；当前无新增风险。
+
+## 今日巡检（2026-04-18，周六）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新为 6.27（2026-04-06，M1 做梦机制实现完成）；discussion-log 持续 **12 天**无新增（建议补档 M2 进展或归档）。
+- [x] 核对代码基线增量：`origin/main` 保持在 `ec50a88`（自 04-17 以来无新增提交）；本地仅有 TODO.md + discussion-log.md 待提交，其余均为运行时文件，无源码漂移。
+- [x] TODO 收口状态：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [x] daemon 健康检查通过（PID 2314，launchd 托管）：连续零错误运行 **50+ 天**（里程碑）；batch 总数维持 19，无新增批次（无新事件，属正常低活动空窗）。
+- [x] M2 ask_human 决策项：`dreaming_actions_ledger.jsonl` ask_human 条目（2026-04-15，high urgency，"M2 Telegram 渠道已确认，是否同步推进 drive_conversation？"）**已 3 天无回复**，行动分发仍未实质推进。
+- [x] 做梦状态延续：dreaming_state.json last_run_date=2026-04-06（**12天前**），间隔约束≥24h，属正常低活动空窗；无新做梦运行。
+- [x] active_push ledger：最后 push 2026-04-03（**15天前**，4条记录）；`data/governance/` 下积压 `.lock` 文件（低优先级清理）。
+- [x] 本地未跟踪文件均为运行时产物（`core/dreaming_*.py` 待归档、`data/adapters/` 待归档、`tools/adapters/` 待归档、`launchd/` 待归档）；无源码漂移风险。
+- [x] **行动项**：① TODO.md 本次巡检提交；② `ask_human` drive_conversation 决策待王大爷确认（**已 3 天，高优先级**）；③ discussion-log 无增量 12 天，建议补档 M2 Telegram sender 实现 + 决策结果或归档 6.27 条目。
+- [x] 风险画像：无 P0 阻塞；外部依赖风险（中）持续；daemon 零错误运行 50+ 天（里程碑）；当前无新增风险。
