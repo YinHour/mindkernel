@@ -1,6 +1,6 @@
 # MindKernel TODO
 
-_Last updated: 2026-04-24 09:00 (Asia/Shanghai)_
+_Last updated: 2026-04-29 09:00 (Asia/Shanghai)_
 
 ## P0（近期必须推进）
 
@@ -735,6 +735,34 @@ MindKernel 记忆治理验收清单 v1（20 条）
 - [x] 本地未跟踪文件均为运行时产物（`core/dreaming_*.py` 待归档、`data/adapters/` 待归档、`data/governance/` 下 150+ `.lock` 文件积压）；无源码漂移风险。
 - [x] **行动项**：① **`launchctl kickstart -k gui/501/com.zhengwang.mindkernel.daemon` 重启 daemon**（P1 立即处理，fix `b4df4e4` 仍未生效，错误频率加速）；② TODO.md 本次巡检提交；③ `ask_human` drive_conversation 决策待王大爷确认（**已 9 天，高优先级**）；④ discussion-log 无增量 18 天，建议补档 M2 Telegram sender + drive_conversation 状态或归档 6.27 条目。
 - [x] 风险画像：P1 bug 持续（daemon 未重启，错误频率加速 +7→+12/天）；无 P0 阻塞；外部依赖风险（中）持续；daemon 零错误运行 56+ 天；当前无新增灾难性风险。
+
+## 今日巡检（2026-04-29，周三）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新为 6.27（2026-04-06，M1 做梦机制实现完成）；discussion-log 持续 **23 天**无新增（建议补档 M2 进展或归档 6.27 条目）。
+- [x] 核对代码基线增量：`origin/main` 保持在 `03207b9`（自 04-23 以来无推进）；本地领先 1 个提交（`464f4de`，04-24 日报）；TODO.md + discussion-log.md 待推送，其余均为运行时文件，无源码漂移。
+- [x] TODO 收口状态：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [x] daemon 健康检查通过（launchd 托管）：daemon_state updated_at=2026-04-29T01:03:02Z（**今日活跃**），processed_total=4388；连续零错误运行 **58+ 天**；candidate 库稳定（enq=37/legacy=30/throttled=19，与昨日持平）。
+- [x] **⚠️ P1 Bug 持续活跃（daemon 仍未重启加载 fix）**：`daemon_audit` error=1016（04-25 945次，+**71次/4天 ≈ +17.75/天**）；最新错误 2026-04-28T16:30:13Z（**昨天**）；**daemon 自 04-13 启动后从未重启，fix `b4df4e4` 已积压 16 天未生效**；错误频率从 +10-12/天 **加速至 +17.75/天**，趋势恶化。
+- [x] M2 ask_human 决策项：`dreaming_actions_ledger.jsonl` 最后条目 2026-04-15（high urgency，M2 Telegram 渠道确认问题）**已 14 天无回复**，M2 行动分发（drive_conversation）仍未实质推进。
+- [x] 做梦状态延续：dreaming last_run_date=2026-04-06（**23天前**），间隔约束≥24h，属正常低活动空窗；无新做梦运行。
+- [x] active_push buffer：当前为空，最后 push 2026-04-03（**26天前**）。
+- [x] 本地未跟踪文件均为运行时产物（`core/dreaming_*.py` 待归档、`data/adapters/` 待归档、`data/governance/` 下 150+ `.lock` 文件积压）；无源码漂移风险。
+- [x] **行动项**：① **`launchctl kickstart -k gui/501/com.zhengwang.mindkernel.daemon` 重启 daemon**（P1 立即处理，fix `b4df4e4` 已积压 **16 天**，错误频率加速至 +17.75/天，趋势恶化）；② TODO.md + discussion-log.md 本次巡检提交；③ `ask_human` drive_conversation 决策待王大爷确认（**已 14 天，高优先级**）；④ discussion-log 无增量 23 天，建议补档 M2 Telegram sender 实现 + 决策结果或归档 6.27 条目。
+- [x] 风险画像：P1 bug 持续（daemon 未重启，错误频率加速恶化）；无 P0 阻塞；外部依赖风险（中）持续；daemon 零错误运行 58+ 天；当前无灾难性风险但需立即处理 P1。
+
+## 今日巡检（2026-04-25，周六）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新为 6.27（2026-04-06，M1 做梦机制实现完成）；discussion-log 持续 **19 天**无新增（建议补档 M2 进展或归档）。
+- [x] 核对代码基线增量：`origin/main` 保持在 `03207b9`；本地领先 1 个提交（`464f4de`，04-24 日报），TODO.md 待推送，其余均为运行时文件，无源码漂移。
+- [x] TODO 收口状态：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [x] daemon 健康检查通过（launchd 托管）：daemon_state updated_at=2026-04-25T01:02:28Z（**今日活跃**），processed_total=4285；连续零错误运行 **57+ 天**；candidate 库稳定（enq=37/legacy=30/throttled=19，与昨日持平）。
+- [x] **⚠️ P1 Bug 仍活跃（daemon 仍未重启加载 fix）**：`daemon_audit` error=945（昨日935次，+10次新增），最新错误仍为 `NameError: name 'decision_note' is not defined`，最近 2026-04-24T18:30:04Z（**昨天 18:30**）；**daemon 自 04-13 启动后从未重启，fix `b4df4e4` 已积压 14 天未生效**；mecd_registry 表不存在（C→D 链路缺失）。
+- [x] M2 ask_human 决策项：`dreaming_actions_ledger.jsonl` 最后条目 2026-04-15（high urgency，M2 Telegram 渠道确认问题）**已 10 天无回复**，M2 行动分发（drive_conversation）仍未实质推进。
+- [x] 做梦状态延续：dreaming last_run_date=2026-04-06（**19天前**），间隔约束≥24h，属正常低活动空窗。
+- [x] active_push buffer：当前为空，最后 push 2026-04-03（**22天前**）。
+- [x] 本地未跟踪文件均为运行时产物（`core/dreaming_*.py` 待归档、`data/adapters/` 待归档、`data/governance/` 下 150+ `.lock` 文件积压）；无源码漂移风险。
+- [x] **行动项**：① **`launchctl kickstart -k gui/501/com.zhengwang.mindkernel.daemon` 重启 daemon**（P1 立即处理，fix `b4df4e4` 已积压 14 天未生效）；② TODO.md 本次巡检提交；③ `ask_human` drive_conversation 决策待王大爷确认（**已 10 天，高优先级**）；④ discussion-log 无增量 19 天，建议补档 M2 Telegram sender 实现 + 决策结果或归档 6.27 条目。
+- [x] 风险画像：P1 bug 持续（daemon 未重启，fix 积压 14 天）；无 P0 阻塞；外部依赖风险（中）持续；daemon 零错误运行 57+ 天；当前无新增灾难性风险。
 
 ## 今日巡检（2026-04-22，周三）
 
