@@ -542,3 +542,44 @@
 - TODO 与风险口径同步：
   - 补充 LLM 核心对象已落地项；
   - 明确新增“外部依赖风险（中）”。
+
+### 6.27 做梦机制 M1 实现完成（2026-04-06）
+
+**背景**：
+王大爷晨间完成了两份关键文档：
+1. `project_review_full_20260406.md` — MECD 闭环完整度复盘
+2. `c_dreaming_design_20260406.md` — C层做梦机制详细设计
+
+**核心发现**：
+- M→E 转化率仅 **2.3%**（305条记忆→7条经验），是整个闭环最大瓶颈
+- MECD 综合评分 7.0/10（较上期 6.5 提升）
+- C层"做梦"机制被提升到 **P0 优先级**
+
+**设计决策**：
+- 采用独立 `dreaming_entries` 表（隔离清晰，不污染 cognition_rules）
+- 三类 triggered_actions：`ask_human` / `propose_task` / `drive_conversation`
+- 做梦复用 cognition_engine 的 epistemic state 推导逻辑
+- 人类反馈通过 `queue_id` 异步闭环，7天过期
+- 四阶段实现：M1（核心闭环）→ M2（行动分发）→ M3（反馈闭环）→ M4（深度集成）
+
+**M1 实现（今日完成）**：
+新增 6 个核心文件：
+- `core/dreaming_state.py` — 触发条件管理（01:00-05:00 窗口，≥20h 间隔）
+- `core/dreaming_store.py` — `dreaming_entries` 表 + `dreaming_human_queue.jsonl`
+- `core/dreaming_preprocessor.py` — 记忆/经验/话题/任务输入整合
+- `core/dreaming_prompt.py` — LLM Prompt 模板（系统提示 + 用户模板 + 反馈模板）
+- `core/dreaming_worker.py` — 做梦主逻辑（LLM 调用 + 解析 + 写入）
+- `core/dreaming_action_router.py` — 三类行动幂等分发（ledger 去重）
+- `launchd/com.zhengwang.mindkernel.dreaming-scheduler.plist` — 每日 01:30 定时触发
+
+**M1 端到端验证结果**：
+- ✅ GLM-4-flash 调用成功（35秒）
+- ✅ 写入 3 条 `dreaming_entries`（association / emotion_action / task_activation 各 1 条）
+- ✅ `drive_conversation` 行动已写入 `active_push_buffer`
+- ✅ launchd 服务已注册并加载
+
+**M2 规划**：
+- `ask_human` → Telegram 主动消息（通过 OpenClaw message 工具）
+- `propose_task` → Things / 飞书任务
+- `drive_conversation` → active_push_buffer 推送
+- 人类回复 → 触发反馈做梦（is_feedback_session=true）

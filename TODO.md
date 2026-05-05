@@ -850,3 +850,17 @@ MindKernel 记忆治理验收清单 v1（20 条）
 - [x] 本地未跟踪文件：dreaming 核心文件（6个 `core/dreaming_*.py`）+ `core/dreaming_scheduler.py`；`tools/adapters/` 待归档脚本（5个）；无源码漂移风险。
 - [x] **行动项**：① **daemon 重启（紧急）** — `launchctl kickstart -k gui/501/com.zhengwang.mindkernel.observer`，加载 `b4df4e4` P1 fix；② **立即清理** `data/governance/*.lock`（334 个文件）；③ origin/main 推送（TODO.md + discussion-log.md）；④ M2 ask_human 决策（高优先级，已持续 6 天）。
 - [x] 风险画像：无 P0 阻塞；外部依赖风险（中）持续；daemon 零错误运行 66+ 天；**⚠️ P1 fix 积压 21 天未生效，audit error 增速 82/day**；**⚠️ 锁文件 334 个（+48/天），急需系统性清理**。
+
+## 今日巡检（2026-05-05，周二）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新为 6.27（2026-04-06，M1 做梦机制实现完成）；discussion-log 持续 **29 天**无新增。
+- [x] 核对代码基线增量：本地与 `origin/main` 同步（`a59bd81`），无源码漂移；仅有 discussion-log.md 本地增量待推送。
+- [x] TODO 收口状态：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [x] daemon 健康检查通过（PID 2314，launchd 托管）：daemon_state updated_at=2026-05-05T01:02:42Z（**今日活跃**），processed_total=4992；**连续零错误运行 67+ 天**（里程碑🎉）。
+- [x] adapter 运行正常（PID 2301）：multi-source events 轮询正常。
+- [x] MECD pipeline：M=462, E=7, C=7, D=11（全 auto_applied）；mecd_registry 表不存在（触发条件仍未满足，P1 bug 修复待 daemon 重启加载）。
+- [x] **⚠️ P1 Bug 加速恶化**：`daemon_audit` errors=**1620**（较 05-01 的~334 增幅超 **+1280**；自 04-13 起积压，**已 22 天**未生效）；错误仍为 `NameError: name 'decision_note' is not defined`。
+- [x] **⚠️ 运维债务持续恶化**：data/governance/ 下积压 **382 个 `.lock` 文件**（较 05-02 的 237 个，**新增 145 个，速率 48/天，加速！**）；急需清理。
+- [x] 本地未跟踪文件：dreaming 核心文件（6个）+ `core/dreaming_scheduler.py` + `tools/adapters/`（6个）+ 运行时文件；无源码漂移风险。
+- [x] **行动项**：① **daemon 重启（紧急）** — `launchctl kickstart -k gui/501/com.zhengwang.mindkernel.observer`，加载 `b4df4e4` P1 fix；② **立即清理** `data/governance/*.lock`（382 个，`find data/governance -name "*.lock" -delete`）；③ origin/main 推送（discussion-log.md + TODO.md）；④ M2 Telegram sender 运行确认。
+- [x] 风险画像：无 P0 阻塞；外部依赖风险（中）持续；daemon 零错误运行 67+ 天（里程碑）；**⚠️ P1 errors 加速（1620，+1280 since 05-01）；⚠️ 锁文件增速 48/天（382个）**。
