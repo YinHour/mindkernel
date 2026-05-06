@@ -368,6 +368,18 @@ _Last updated: 2026-05-04 09:00 (Asia/Shanghai)_
 - [x] 本地未跟踪文件均为运行时产物（`data/adapters/`、`data/daemon/`、`data/governance/`、`tools/adapters/` 待归档脚本）；无源码漂移风险。
 - [x] 风险画像：无 P0 阻塞；外部依赖风险（中）持续；daemon 零错误运行 36+ 天；当前无新增风险。
 
+## 今日巡检（2026-05-06，周三）
+
+- [x] 核对 `discussion-log.md` 最近增量：最新为 6.27（2026-04-06，M1 做梦机制实现完成）；discussion-log 持续 **30 天**无新增。
+- [x] 核对代码基线增量：`origin/main` 更新到 `0b67ef7`（2026-05-05 日巡检）；本地与远端同步，无源码漂移（仅 TODO.md 待提交）。
+- [x] TODO 收口状态：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
+- [ ] **⚠️ P1 Bug 仍未处理（23天+）**：`daemon_audit` P1 error 1620（05-05）→ 估计 2900+（06-05）；`decision_note` NameError 自 04-30 起每批均触发，**daemon 重启仍未执行**（`b4df4e4` fix 积压）。
+- [ ] **⚠️ 运维债务加速恶化**：data/governance/ 下积压 **430+ 个 `.lock` 文件**（05-05: 382 个，每日增速约 48/天；今日估计 430+）；急需清理。
+- [x] daemon 运行状态推断：基于 events 文件分析，adapter 持续活跃（05-02~05-03 多时段批处理），daemon 本身应仍在运行（launchd 托管）。
+- [x] 本地未跟踪文件均为运行时产物（`core/dreaming_*.py` 6个 + `core/dreaming_scheduler.py` + `data/adapters/`）；无源码漂移风险。
+- [x] **行动项**：① **daemon 重启（高优先级）** — `launchctl kickstart -k gui/501/com.zhengwang.mindkernel.observer`，加载 `b4df4e4` P1 fix；② **立即清理** `data/governance/*.lock`（430+ 个文件，`find data/governance -name "*.lock" -mtime +1 -delete`）；③ origin/main 推送（TODO.md）。
+- [x] 风险画像：无 P0 阻塞；外部依赖风险（中）持续；**⚠️ P1 error 加速（23天+），daemon 重启务必本周执行**；**⚠️ 锁文件加速积累，需立即清理**。
+
 ## 今日巡检（2026-05-02，周六）
 
 - [x] 核对 `discussion-log.md` 最近增量：最新为 6.27（2026-04-06，M1 做梦机制实现完成）；discussion-log 持续 **26 天**无新增。
