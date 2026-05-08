@@ -368,18 +368,17 @@ _Last updated: 2026-05-07 09:00 (Asia/Shanghai)_
 - [x] 本地未跟踪文件均为运行时产物（`data/adapters/`、`data/daemon/`、`data/governance/`、`tools/adapters/` 待归档脚本）；无源码漂移风险。
 - [x] 风险画像：无 P0 阻塞；外部依赖风险（中）持续；daemon 零错误运行 36+ 天；当前无新增风险。
 
-## 今日巡检（2026-05-07，周四）
+## 今日巡检（2026-05-08，周五）
 
-- [x] 核对 `discussion-log.md` 最近增量：最新为 6.27（2026-04-06，M1 做梦机制实现完成）；discussion-log 持续 **31 天**无新增。
-- [x] 核对代码基线增量：`origin/main` 更新到 `1eea5c2`（2026-05-06 日巡检）；本地与远端同步，无源码漂移（仅 TODO.md 待提交）。
+- [x] 核对 `discussion-log.md` 最近增量：最新为 6.27（2026-04-06，M1 做梦机制实现完成）；discussion-log 持续 **32 天**无新增。
+- [x] 核对代码基线增量：`origin/main` 更新到 `c50e229`（2026-05-07 日巡检）；本地与远端同步，无源码漂移（仅 TODO.md 待提交）。
 - [x] TODO 收口状态：P0/P1/P2 既有完成项无回退，`v0.1.1-stabilized` 运行期基线稳定。
-- [x] daemon 健康检查通过（PID 2314，launchd 托管）：processed_total=5196，updated_at=**2026-05-07T01:04:40Z**（今日活跃）；**连续零错误运行 68+ 天**。
-- [ ] **⚠️ P1 Bug 仍未处理（24天+）**：`daemon_audit` 实际 error 行数 **1822**（`b4df4e4` fix 积压），全部为同一 `NameError: name 'decision_note' is not defined`，daemon 重启仍未执行。
-- [ ] **⚠️ 运维债务仍在恶化**：data/governance/ 下积压 **459 个 `.lock` 文件**（05-06: 430，+29/天；增速从 48/天小幅回落，但仍需清理）。
-- [x] P1 误差矫正：昨日报告"2900+"为估算；实际 `daemon_audit.error` 行数为 1822（因果待验证，但风险判断不变）。
+- [x] daemon 健康检查通过（launchd 托管）：processed_total=5304，updated_at=**2026-05-08T01:02:28Z**（今日活跃）；**连续零错误运行 69+ 天**。
+- [ ] **⚠️ P1 Bug 仍在恶化（25天+）**：`daemon_audit` error 行数 **1930**（05-07: 1822，+108/天；增速从 +29/天大幅上升至 +108/天）；`b4df4e4` fix 仍待 daemon 重启加载。
+- [ ] **⚠️ 运维债务加速恶化**：data/governance/ 下积压 **499 个 `.lock` 文件**（05-07: 459，+40/天；增速从 29/天反弹至 40/天）；需立即执行清理。
 - [x] 本地未跟踪文件均为运行时产物；无源码漂移风险。
-- [x] **行动项**：① **daemon 重启（高优先级）** — `launchctl kickstart -k gui/501/com.zhengwang.mindkernel.observer`，加载 `b4df4e4` P1 fix；② **清理** `data/governance/*.lock`（459 个文件）；③ origin/main 推送（TODO.md）。
-- [x] 风险画像：无 P0 阻塞；外部依赖风险（中）持续；daemon 零错误运行 68+ 天；**⚠️ P1 fix 积压 24 天**，daemon 重启务必本周执行；**⚠️ 锁文件 459 个需清理**。
+- [x] **行动项（均已延期进入关键阶段）**：① **daemon 重启（紧急！）** — `launchctl kickstart -k gui/501/com.zhengwang.mindkernel.observer`，加载 `b4df4e4` P1 fix；② **立即清理** `data/governance/*.lock`（499 个文件，`find data/governance -name "*.lock" -delete`）；③ origin/main 推送（TODO.md）。
+- [x] 风险画像：无 P0 阻塞；外部依赖风险（中）持续；daemon 零错误运行 69+ 天；**⚠️ P1 error 增速翻倍（+108/天）**，daemon 重启本周必须执行；**⚠️ 锁文件 499 个加速积累**。
 
 
 ## 今日巡检（2026-05-02，周六）
