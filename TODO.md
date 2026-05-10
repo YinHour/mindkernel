@@ -10,10 +10,11 @@ _Last updated: 2026-05-10 22:30 (Asia/Shanghai)_
 - [x] D1: 经验卡片主动推送 OpenClaw（`scan_experience_cards` 合入 active_push_worker，MECD 可观测性闭环完成）
 - [x] D2: Governance 周报自动化（`weekly_report_generator.py`，覆盖 MECD metrics + daemon health + 风险评估）
 - [x] E1: 推送 5 个 commits 到 origin/main
+- [x] M3: AI内部推理过滤（`is_ai_internal_content`，HEARTBEAT/tool/commit 等 14 类噪音过滤，14/14 测试通过）
+- [x] B-Email: 邮件记忆扫描器（himalaya → MindKernel retain，过滤营销/新闻，保留高价值个人邮件）
 
 **下一步可选方向**：
-- M2 行动分发落地（ask_human→Telegram、drive_conversation、propose_task→Things）
-- 外部记忆大脑（飞书/邮件/日历记忆化）
+- B-Feishu: 飞书文档记忆扫描器（需先 `lark-cli auth login` 重新授权用户 token）
 - 量化与可观测性增强（MECD Canvas Panel 告警推送）
 
 ---
