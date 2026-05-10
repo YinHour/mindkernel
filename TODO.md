@@ -18,6 +18,32 @@ _Last updated: 2026-05-10 22:30 (Asia/Shanghai)_
 
 ---
 
+## 2026-05-10 M2 行动分发 Sprint（进行中）
+
+### 完整架构
+```
+Generator(每30min) → dreaming_entries → Dispatcher(每日02:00) → active_push_buffer
+                                                                    ↓
+                                        Telegram Sender(每15min) ← ask_human
+                                        Task Queue(JSONL)          ← propose_task
+                                        (drive_conversation待后续)) ← drive_conversation
+```
+
+### 里程碑
+- [x] M2-1: 修复 plist 使用 venv python（2026-05-10 23:40）
+- [x] M2-2: dreaming_generator.py — 每30min LLM 生成带 triggered_actions 的洞察（2026-05-10 23:46）
+- [x] M2-3: propose_task → Things 3 CLI（含 Things 3 不可用时 JSONL task queue fallback）（2026-05-10 23:54）
+- [ ] M2-4: drive_conversation → OpenClaw 主动发起 Telegram 对话（待后续）
+- [ ] M2-5: 幂等去重（ledger 防止同一 action 重复入队）
+- [ ] M2-6: Dispatcher daemon plist（目前手动触发）
+
+**launchd 托管状态**：
+- `com.zhengwang.mindkernel.dreaming-generator` ✅ 加载（每30min）
+- `com.zhengwang.mindkernel.dreaming-dispatcher` ✅ 运行
+- `com.zhengwang.mindkernel.dreaming-telegram` ✅ 运行（每15min）
+
+---
+
 ## P0（近期必须推进）
 
 - [x] 将 memory index 从草案升级为可用模块（**增量 reindex**、错误恢复、去重策略）
