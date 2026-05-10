@@ -68,7 +68,11 @@ def _read_ledger() -> set:
         return ledger
     for line in LEDGER_FILE.read_text().splitlines():
         try:
-            ledger.add(json.loads(line)["decision_id"])
+            entry = json.loads(line)
+            if "decision_id" in entry:
+                ledger.add(entry["decision_id"])
+            if "experience_id" in entry:
+                ledger.add(entry["experience_id"])
         except Exception:
             pass
     return ledger
@@ -78,6 +82,13 @@ def _append_ledger(decision_id: str, pushed_at: str):
     LEDGER_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(LEDGER_FILE, "a") as f:
         f.write(json.dumps({"decision_id": decision_id, "pushed_at": pushed_at}, ensure_ascii=False) + "\n")
+
+
+def _write_ledger_entry(entry: dict):
+    """Write a generic ledger entry (supports decision_id or experience_id)."""
+    LEDGER_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(LEDGER_FILE, "a") as f:
+        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
 
 def _append_push_buffer(entry: dict):
@@ -276,6 +287,69 @@ def scan_dreaming_buffer() -> list[dict]:
     return pushed
 
 
+def scan_experience_cards(db_path: Path, dry_run: bool = True) -> list[dict]:
+    """
+    扫描 active experience_records，生成经验卡片推送到 OpenClaw 对话（心跳展示）。
+    幂等：已在 ledger 中记录 experience_id 的跳过。
+    """
+    conn = sqlite3.connect(str(db_path))
+    conn.row_factory = sqlite3.Row
+    ledger = _read_ledger()
+    pushed = []
+
+    try:
+        rows = conn.execute(
+            "SELECT id, payload_json, created_at FROM experience_records WHERE status='active' ORDER BY created_at DESC LIMIT 50"
+        ).fetchall()
+    except sqlite3.OperationalError:
+        conn.close()
+        return pushed
+
+    for row in rows:
+        exp_id = row["id"]
+        # Idempotency: skip already-pushed (ledger stores flattened ids)
+        if exp_id in ledger:
+            continue
+
+        try:
+            payload = json.loads(row["payload_json"]) if row["payload_json"] else {}
+        except Exception:
+            payload = {}
+
+        episode = payload.get("episode_summary", "")
+        action = payload.get("action_taken", "")
+        applicability = payload.get("applicability", [])
+        created = row["created_at"]
+
+        # Build readable card text
+        card_lines = [f"📚 经验卡片 [{exp_id[:20]}...]"]
+        if episode:
+            card_lines.append(f"  背景：{episode[:100]}")
+        if action:
+            card_lines.append(f"  行动：{action[:100]}")
+        if applicability:
+            tips = "; ".join(applicability[:2])
+            card_lines.append(f"  心得：{tips[:100]}")
+        card_text = "\n".join(card_lines)
+
+        entry = {
+            "type": "experience_card",
+            "experience_id": exp_id,
+            "text": card_text,
+            "created_at": created,
+        }
+
+        if not dry_run:
+            _append_push_buffer(entry)
+            _write_ledger_entry({"experience_id": exp_id, "pushed_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")})
+
+        pushed.append(entry)
+        print(f"  → 📚 经验卡片: {episode[:60] if episode else exp_id[:40]}")
+
+    conn.close()
+    return pushed
+
+
 def scan_decision_traces(db_path: Path, dry_run: bool = True) -> list[dict]:
     """扫描近 24 小时新 decision traces，触发主动推送"""
     conn = sqlite3.connect(str(db_path))
@@ -380,6 +454,15 @@ def main():
                     print(f"[ERROR] DB error: {e}")
             except Exception as e:
                 print(f"[ERROR] scan_decision_traces failed: {e}")
+
+            # Scan for new experience card pushes
+            try:
+                exp_results = scan_experience_cards(Path(args.db), dry_run=args.dry_run)
+                for er in exp_results:
+                    print(f"[PUSH] experience_id={er['experience_id']} → {er.get('text','')[:80]}")
+            except Exception as e:
+                print(f"[ERROR] scan_experience_cards failed: {e}")
+
             time.sleep(args.interval)
     else:
         try:
@@ -392,6 +475,14 @@ def main():
                 print(f"[active_push] DB table 'decision_traces' not ready yet (MECD pipeline pending). Skipping.")
             else:
                 raise
+
+        # Scan for new experience card pushes
+        try:
+            exp_results = scan_experience_cards(Path(args.db), dry_run=args.dry_run)
+            if exp_results:
+                print(f"[experience] Presented {len(exp_results)} experience card(s).")
+        except Exception as e:
+            print(f"[ERROR] scan_experience_cards failed: {e}")
 
         # Also scan dreaming buffer for pending action dispatches
         dreaming_pushes = scan_dreaming_buffer()
