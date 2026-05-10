@@ -1,6 +1,22 @@
 # MindKernel TODO
 
-_Last updated: 2026-05-09 09:00 (Asia/Shanghai)_
+_Last updated: 2026-05-10 22:30 (Asia/Shanghai)_
+
+## 2026-05-10 维护 Sprint（已完成）
+
+- [x] A1: 归档 M1-dreaming 核心模块（dreaming_store/worker/scheduler/state/preprocessor/prompt，6文件 1445行）
+- [x] A2: 愈合 daemon 审计错误历史（2030条 NameError/decision_note 已标记 healed）
+- [x] A3: governance checkpoint 验证修复（脏 ID 自动重置为 None）
+- [x] D1: 经验卡片主动推送 OpenClaw（`scan_experience_cards` 合入 active_push_worker，MECD 可观测性闭环完成）
+- [x] D2: Governance 周报自动化（`weekly_report_generator.py`，覆盖 MECD metrics + daemon health + 风险评估）
+- [x] E1: 推送 5 个 commits 到 origin/main
+
+**下一步可选方向**：
+- M2 行动分发落地（ask_human→Telegram、drive_conversation、propose_task→Things）
+- 外部记忆大脑（飞书/邮件/日历记忆化）
+- 量化与可观测性增强（MECD Canvas Panel 告警推送）
+
+---
 
 ## P0（近期必须推进）
 
