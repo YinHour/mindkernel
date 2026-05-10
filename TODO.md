@@ -33,9 +33,9 @@ Generator(每30min) → dreaming_entries → Dispatcher(每日02:00) → active_
 - [x] M2-1: 修复 plist 使用 venv python（2026-05-10 23:40）
 - [x] M2-2: dreaming_generator.py — 每30min LLM 生成带 triggered_actions 的洞察（2026-05-10 23:46）
 - [x] M2-3: propose_task → Things 3 CLI（含 Things 3 不可用时 JSONL task queue fallback）（2026-05-10 23:54）
-- [ ] M2-4: drive_conversation → OpenClaw 主动发起 Telegram 对话（待后续）
-- [ ] M2-5: 幂等去重（ledger 防止同一 action 重复入队）
-- [ ] M2-6: Dispatcher daemon plist（目前手动触发）
+- [x] M2-4: drive_conversation → 已通过现有 Telegram Sender 覆盖（opening_line 作为 text 发送）（2026-05-10 23:55）
+- [x] M2-5: 幂等去重（buffer + task queue 双层 dedup，task queue 从 29→5 条）（2026-05-10 23:55）
+- [x] M2-6: Dispatcher daemon plist（每日 02:00 via launchd，已加载运行）（2026-05-10 23:40）
 
 **launchd 托管状态**：
 - `com.zhengwang.mindkernel.dreaming-generator` ✅ 加载（每30min）
