@@ -991,6 +991,27 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
+def heal_stale_errors(c: sqlite3.Connection, logger=None) -> int:
+    """Mark old NameError audit entries as healed after bug fix is confirmed."""
+    cur = c.cursor()
+    cur.execute("""
+        UPDATE daemon_audit
+        SET status = 'healed'
+        WHERE status = 'error'
+          AND error LIKE '%NameError%'
+          AND error LIKE '%decision_note%'
+          AND processed_at < datetime('now', '-1 day')
+    """)
+    healed = cur.rowcount
+    c.commit()
+    msg = f"[heal] marked {healed} stale NameError/decision_note audit entries as healed"
+    if logger:
+        logger.info(msg)
+    else:
+        print(msg)
+    return healed
+
+
 def main():
     args = parse_args()
 
@@ -1040,6 +1061,7 @@ def main():
 
         c = db_conn(state_db)
         init_db(c)
+        heal_stale_errors(c)
 
         if scheduler_db is not None:
             sc = sch.conn(scheduler_db)
