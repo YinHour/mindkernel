@@ -128,15 +128,64 @@ def _dispatch_ask_human(action: dict, entry: dict) -> dict:
 
 
 def _dispatch_propose_task(action: dict, entry: dict) -> dict:
-    """分发 propose_task：写入 push buffer（后续接入 Things/飞书）"""
+    """分发 propose_task：写入 push buffer + 执行 Things 3"""
     push_to_active_buffer(action, entry["id"], entry)
+    # Execute via Things CLI
+    task_text = action.get("task_text", "")
+    notes = action.get("notes", "")
+    urgency = action.get("urgency", "medium")
+    things_ok = False
+    try:
+        import subprocess
+        things_bin = "/opt/homebrew/bin/things"
+        cmd = [things_bin, "add"]
+        if notes:
+            cmd += ["--notes", notes[:500]]
+        cmd += ["--tags", "MindKernel"]
+        if urgency == "high":
+            cmd += ["--when", "today"]
+        elif urgency == "medium":
+            cmd += ["--when", "tomorrow"]
+        cmd += ["--", task_text[:200]]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        things_ok = result.returncode == 0
+        if things_ok:
+            logger.info(f"[Router→Things] Added: {task_text[:60]}")
+        else:
+            logger.warning(f"[Router→Things] Failed: {result.stderr[:100]}")
+            _write_task_to_queue_fallback(task_text, notes, urgency, entry["id"])
+    except Exception as e:
+        logger.warning(f"[Router→Things] Exception: {e}")
+        _write_task_to_queue_fallback(task_text, notes, urgency, entry["id"])
     return {
         "status": "dispatched",
         "action": "propose_task",
         "entry_id": entry["id"],
-        "task_text": action.get("task_text", ""),
-        "urgency": action.get("urgency", "medium"),
+        "task_text": task_text,
+        "urgency": urgency,
+        "things_executed": things_ok,
     }
+
+
+def _write_task_to_queue_fallback(title: str, notes: str = "", urgency: str = "medium", entry_id: str = ""):
+    """Fallback: write propose_task to JSONL when Things 3 not available."""
+    import uuid
+    queue_path = ROOT / "data" / "governance" / "propose_task_queue.jsonl"
+    queue_path.parent.mkdir(parents=True, exist_ok=True)
+    entry_obj = {
+        "id": f"task_{uuid.uuid4().hex[:8]}",
+        "title": title[:200],
+        "notes": notes[:500],
+        "tags": "MindKernel",
+        "urgency": urgency,
+        "source": "dreaming",
+        "dreaming_entry_id": entry_id,
+        "created_at": now_iso(),
+        "status": "pending",
+    }
+    with open(queue_path, "a", encoding="utf-8") as f:
+        f.write(json.dumps(entry_obj, ensure_ascii=False) + "\n")
+    logger.info(f"[Router→TaskQueue] Queued: {title[:60]}")
 
 
 def _dispatch_drive_conversation(action: dict, entry: dict) -> dict:
