@@ -46,9 +46,30 @@ def now_iso() -> str:
 # ---------------------------------------------------------------------------
 
 def load_checkpoint() -> dict:
+    cp = {"last_decision_id": None, "last_run": None}
     if CHECKPOINT_FILE.exists():
-        return json.loads(CHECKPOINT_FILE.read_text())
-    return {"last_decision_id": None, "last_run": None}
+        cp = json.loads(CHECKPOINT_FILE.read_text())
+    # Validate last_decision_id exists in either database; reset if missing
+    last_id = cp.get("last_decision_id")
+    if last_id:
+        import sqlite3
+        valid = False
+        for db_file in ["data/scheduler.sqlite", "data/mindkernel_v0_1.sqlite"]:
+            db_path = ROOT / db_file
+            if db_path.exists():
+                conn = sqlite3.connect(str(db_path))
+                cur = conn.cursor()
+                cur.execute("SELECT 1 FROM decision_traces WHERE id = ? LIMIT 1", (last_id,))
+                if cur.fetchone():
+                    valid = True
+                conn.close()
+            if valid:
+                break
+        if not valid:
+            print(f"[WARN] checkpoint last_decision_id '{last_id}' not found in any database; resetting to None")
+            cp["last_decision_id"] = None
+            save_checkpoint(cp)
+    return cp
 
 
 def save_checkpoint(cp: dict):
