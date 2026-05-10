@@ -35,6 +35,7 @@ def push_to_active_buffer(
 ) -> bool:
     """
     写入 active_push_buffer，触发 HEARTBEAT 展示。
+    幂等：同一 insight_id + action_type 不重复写入。
     """
     PUSH_BUFFER.parent.mkdir(parents=True, exist_ok=True)
 
@@ -56,6 +57,13 @@ def push_to_active_buffer(
         display_text = f"🤔 {action.get('question')}"
     else:
         display_text = f"🌙 做梦洞察（ID: {insight_id}）"
+
+    # 幂等检查：同一 insight_id + action_type 已存在则跳过
+    if PUSH_BUFFER.exists():
+        existing = PUSH_BUFFER.read_text()
+        if f'"insight_id": "{insight_id}"' in existing and f'"action_type": "{actual_action}"' in existing:
+            logger.info(f"[Router] Buffer幂等跳过: {insight_id}/{actual_action}")
+            return False
 
     push_entry = {
         "id": f"push_{uuid.uuid4().hex[:8]}",
@@ -168,10 +176,23 @@ def _dispatch_propose_task(action: dict, entry: dict) -> dict:
 
 
 def _write_task_to_queue_fallback(title: str, notes: str = "", urgency: str = "medium", entry_id: str = ""):
-    """Fallback: write propose_task to JSONL when Things 3 not available."""
+    """Fallback: write propose_task to JSONL when Things 3 not available. 幂等：同一 entry_id 不重复写入。"""
     import uuid
     queue_path = ROOT / "data" / "governance" / "propose_task_queue.jsonl"
     queue_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # 幂等检查
+    if queue_path.exists():
+        for line in queue_path.read_text().splitlines():
+            if line.strip():
+                try:
+                    existing = json.loads(line)
+                    if existing.get("dreaming_entry_id") == entry_id and existing.get("source") == "dreaming":
+                        logger.info(f"[Router→TaskQueue] 幂等跳过: {entry_id}")
+                        return
+                except Exception:
+                    pass
+
     entry_obj = {
         "id": f"task_{uuid.uuid4().hex[:8]}",
         "title": title[:200],
