@@ -50,8 +50,92 @@ def save_checkpoint(cp: dict):
     CHECKPOINT_FILE.write_text(json.dumps(cp, ensure_ascii=False, indent=2))
 
 
+# ── AI Internal Content Filter ─────────────────────────────────────────────────
+# 过滤规则：以下内容不应作为独立记忆条目保留
+
+# 完全跳过：无意义系统噪音
+SKIP_PATTERNS = [
+    "HEARTBEAT_OK",
+    "NO_REPLY",
+    "heartbeat poll",
+    "[OpenClaw heartbeat",
+    "``` Sender",
+    "conversation_id",
+    "reply_to_current",
+    "tool_result", "tool result",
+]
+
+# 跳过以这些开头的行（格式标记）
+SKIP_PREFIXES = (
+    "MEDIA:",
+    "[[reply_to",
+    "[[audio",
+    "[embed ",
+    "<!-- OPENCLAW",
+)
+
+# AI 内部推理关键词
+AI_INTERNAL_KEYWORDS = [
+    "tool_call", "tool_result", "tool_use",
+    "function_call", "invoke", "parameters:",
+    "FCP:", "FSM:", "STATE:", "ACT:",
+    "Commit:", "commit ", "git commit", "git add",
+    "Traceback", "Error:", "Exception:",
+    "正在执行", "执行结果", "调用成功",
+    "→ ", "✓ ", "✗ ", "❌ ",
+]
+
+
+def is_ai_internal_content(text: str) -> bool:
+    """判断文本是否为 AI 内部推理内容（不应作为独立记忆）。"""
+    if not text or len(text.strip()) < 3:
+        return True
+    t = text.strip()
+
+    # 完全跳过模式
+    t_lower = t.lower()
+    for pat in SKIP_PATTERNS:
+        if pat.lower() in t_lower:
+            return True
+
+    # 前缀跳过
+    if t_lower.startswith(SKIP_PREFIXES):
+        return True
+
+    # 心跳系统消息
+    if t.startswith("[") and ("GMT+" in t_lower or "GMT-" in t_lower or "UTC" in t_lower) and ("heartbeat" in t.lower() or "HEARTBEAT" in t.upper()):
+        return True
+
+    # JSON-like 系统元数据行
+    if t.startswith("{") and t.endswith("}") and len(t) < 500:
+        try:
+            import json
+            json.loads(t)
+            return True
+        except Exception:
+            pass
+
+    # 纯英文单行系统信息
+    if len(t) < 100 and any(t_lower.startswith(kw) for kw in ["NO_REPLY", "HEARTBEAT", "heartbeat"]):
+        return True
+
+    # AI 内部推理标记
+    lower_t = t.lower()
+    for kw in AI_INTERNAL_KEYWORDS:
+        if kw.lower() in lower_t:
+            # 有中文句子的长消息放行
+            if len(t) > 60 and any(c in t for c in "，。！？…"):
+                continue
+            return True
+
+    # 重复确认词（极短消息）
+    if t in ("好", "好的", "可以", "行", "嗯", "ok", "OK", "收到", "👍", "✅"):
+        return True
+
+    return False
+
 def extract_text(content) -> str:
-    """从 OpenClaw message content 提取纯文本。"""
+    """从 OpenClaw message content 提取纯文本（仅 user-facing 可见内容）。"""
     if isinstance(content, list):
         parts = []
         for c in content:
@@ -114,6 +198,9 @@ def transcript_to_events(transcript_path: str, session_id: str) -> list[dict]:
                 ts = obj.get("timestamp", "")
                 content = extract_text(msg.get("content", []))
                 if not content:
+                    continue
+                # 过滤 AI 内部推理内容
+                if role == "assistant" and is_ai_internal_content(content):
                     continue
                 event_id = f"oc_{obj.get('id', '')}" or None
                 if not event_id or event_id == "oc_":
