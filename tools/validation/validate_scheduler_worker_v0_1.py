@@ -8,7 +8,7 @@ import shutil
 import subprocess
 import tempfile
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -38,6 +38,10 @@ def main():
     tmp = Path(tempfile.mkdtemp(prefix="mk-worker-v01-"))
     ws = tmp / "workspace"
     shutil.copytree(FIXTURE_WS, ws)
+    # Keep the dated fixture in scope as calendar time advances. Production
+    # worker defaults remain unchanged; this script verifies the worker loop.
+    oldest_fixture_date = min(date.fromisoformat(p.stem) for p in (ws / "memory").glob("????-??-??.md"))
+    fixture_lookback_days = max(30, (datetime.now(timezone.utc).date() - oldest_fixture_date).days + 1)
 
     db = tmp / "scheduler.sqlite"
     index_db = tmp / "index.sqlite"
@@ -80,6 +84,8 @@ def main():
             str(index_db),
             "--reports-dir",
             str(reports),
+            "--since-days",
+            str(fixture_lookback_days),
             "--run-once",
         ]
     )
