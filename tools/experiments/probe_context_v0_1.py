@@ -68,12 +68,14 @@ def assemble(records, *, as_of, project, task=None, horizon=None):
     for r in records:
         if not isinstance(r, dict):
             raise ValueError("each record must be an object")
+        record_id = r.get("id")
+        if isinstance(record_id, str):
+            if record_id in seen:
+                raise ValueError("duplicate record id: " + record_id)
+            seen.add(record_id)
         if not _validate(r):
             exclude(r, "invalid_record")
             continue
-        if r["id"] in seen:
-            raise ValueError("duplicate record id: " + r["id"])
-        seen.add(r["id"])
         if _time(r["source"]["available_at"]) > cutoff or _time(r["source"]["created_at"]) > cutoff:
             exclude(r, "future_source")
         elif r["scope"]["project"] != project or r["scope"]["task"] not in (None, task):

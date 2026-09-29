@@ -38,7 +38,7 @@
 
 请求提供 `as_of`、`horizon`、项目和任务。`as_of` 是证据截止点，`horizon` 只用于规划已知的未来安排，不能开放未来证据。`horizon >= as_of`，默认相等。
 
-1. 校验记录与时区。重复记录 ID 报错；引用同一事件不意味着多个独立事件。
+1. 校验记录与时区。重复字符串记录 ID 在排除无效记录之前报错；无效记录不能隐藏 ID 冲突。引用同一事件不意味着多个独立事件。
 2. 仅使用 source.created_at、source.available_at 均不晚于 as_of 的记录。recorded_at 保持实际整理时间，不当作历史可见性证据。
 3. 按项目和任务精确匹配。其他项目或其他具体任务的信息排除。
 4. 只用当时已知且已生效的明确用户修订处理 supersedes；只允许同类型、同语义键和完全相同范围。被明确永久取代的记录不会因新记录到期而复活。
@@ -46,6 +46,8 @@
 6. history_summary、assistant_inference 以及未经用户明确确认的人类意愿、约束、可用性进入 needs_recheck。这一分组保留内容和来源，表达待查证，不能当硬约束。任务状态与产物引用必须提供 recheck_after。
 7. 对完全相同类型、key 和 scope 的其余候选，以明确用户表达优先；同等级采用最新 created_at。同一最新时点存在不同值时进入 conflicts，不任意选一个。先确定优先关系，再将已到 recheck_after 的胜出记录放入 needs_recheck，不能因此恢复旧约束；有截止时间的临时例外过期后，未被永久取代的原约束仍可恢复。不同范围的记录并列保留，不在本轮发明跨范围覆盖。
 8. 输出 current、upcoming、needs_recheck、conflicts、excluded 五组；excluded 保留 ID 与原因，其余保留完整来源。未来安排与当前约束分组解析，使用者不能把 upcoming 直接当成当天不可用。
+
+复核期限可以早于生效日期，例如未来安排需要事先重新确认。落入规划范围且已到复核期限时进入 needs_recheck，保留原生效区间，不当作当前事实；复核期未到时仍进入 upcoming。recheck_after 与 valid_from 不要求按先后排序。
 
 排序仅保证重跑一致，不是置信度或重要性排名。本轮没有输入长度预算；若未来做截断，必须报告约束是否被截断，不能静默丢掉。
 
@@ -72,7 +74,7 @@
 
 ## 7. 运行合成规则检查
 
-公开的[参考探测器](../../tools/experiments/probe_context_v0_1.py)与[17 项合成检查](../../test/test_context_probe_v0_1.py)不含真实对话，属于离线实验工具，尚未接入运行系统。Python 3.11+ 下在仓库根目录运行：
+公开的[参考探测器](../../tools/experiments/probe_context_v0_1.py)与[19 项合成检查](../../test/test_context_probe_v0_1.py)不含真实对话，属于离线实验工具，尚未接入运行系统。Python 3.11+ 下在仓库根目录运行：
 
 ```bash
 python3 -m unittest discover -s test -p 'test_context_probe_v0_1.py' -v

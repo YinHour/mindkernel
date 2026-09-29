@@ -137,6 +137,29 @@ class ContextBoundaryTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             run([record(), record()])
 
+    def test_malformed_record_cannot_hide_a_duplicate_id(self):
+        invalid = record()
+        del invalid["source"]["ref"]
+        for case, records in enumerate(([invalid, record()], [record(), invalid], [invalid, invalid])):
+            with self.subTest(case=case), self.assertRaisesRegex(ValueError, "duplicate record id"):
+                run(records)
+
+    def test_future_arrangement_can_need_reconfirmation_before_it_starts(self):
+        future = record(
+            "future", kind="availability", key="availability",
+            valid_from="2026-09-21T00:00:00+08:00",
+            valid_until="2026-09-22T00:00:00+08:00",
+            recheck_after="2026-09-20T00:00:00+08:00",
+        )
+        before = run([future], "2026-09-19T12:00:00+08:00", horizon="2026-09-22T00:00:00+08:00")
+        self.assertEqual(ids(before, "upcoming"), ["future"])
+        due = run([future], "2026-09-20T00:00:00+08:00", horizon="2026-09-22T00:00:00+08:00")
+        self.assertEqual(ids(due, "needs_recheck"), ["future"])
+        self.assertEqual(due["current"], [])
+        self.assertEqual(due["upcoming"], [])
+        self.assertEqual(due["excluded"], [])
+        self.assertEqual(due["needs_recheck"][0]["valid_from"], future["valid_from"])
+
 
 if __name__ == "__main__":
     unittest.main()
