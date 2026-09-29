@@ -1008,7 +1008,7 @@ def heal_stale_errors(c: sqlite3.Connection, logger=None) -> int:
     if logger:
         logger.info(msg)
     else:
-        print(msg)
+        print(msg, file=sys.stderr)
     return healed
 
 

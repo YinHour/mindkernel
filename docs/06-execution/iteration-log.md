@@ -190,6 +190,13 @@
 - 本次合并核查范围为：基线与源提交、GitHub 检查结果、真实实验材料未受跟踪，以及远端 main 是否包含合并结果。最终合并状态与提交 SHA 以 PR 的 GitHub 记录为准，详细本地核验保存在 `reports/experiments/week-01/integration-2026-09-28/`。
 - 保留此前网络与审批失败记录作为历史条件；权限调整后推送已成功，合并不代表 W1-03 或学习效果验证完成。下一步仍为只读入口到情境标注的适配与输入组装 review。
 
+### 2026-09-29：PR 的 CI 阻碍修复
+
+- PR #1 的关键路径 CI 在 daemon 骨架验证处失败：启动时的 `[heal]` 诊断写入 stdout，破坏命令的 JSON 输出。该代码与基线相同；此前 67 项 unittest 未覆盖此 daemon 输出约定，不能用 unittest 通过代替完整 CI。
+- 增加独立临时状态、PID 与锁路径的输出回归，先复现 JSON 解析失败，再将诊断改为 stderr。没有改动修复逻辑、调度规则、训练或采集范围。
+- 本地完整 unittest 68 项通过；CI 的前 17 项验证通过，daemon 三项在串行验证中通过。首次并行本地检查曾遇到临时锁占用，未清理其他进程，串行重试通过；日志保存在本地 `pr-critical-path.log`、`pr-daemon-serial-validation.log` 和 `pr-full-tests.log`。
+- 旧 PR 提交的 Sourcery 检查成功，未产生 review 评论；修正提交仍须核对其自身的 GitHub 检查与合并结果。最终状态见 [PR #1](https://github.com/YinHour/mindkernel/pull/1)。
+
 ## 候选项（最多两个）
 
 1. W2-01：比较动态侧写对场景理解的帮助；以独立评估案例和基线可用为前提。
