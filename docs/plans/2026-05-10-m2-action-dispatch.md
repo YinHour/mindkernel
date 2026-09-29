@@ -1,5 +1,7 @@
 # M2 行动分发落地 — Implementation Plan
 
+> 状态校正（2026-09-17）：下文保留 2026-05-10 的原始实施计划，不作为当前部署手册。经源码核对，`propose_task` 由 `core/dreaming_action_router.py` 调用 Things 3 CLI，失败时写入 `data/governance/propose_task_queue.jsonl`；`drive_conversation` 将开场白写入 active push buffer，再由 Telegram Sender 发送。原计划 M2-4 的 `tools/executors/conversation_driver.py` 不存在，OpenClaw session 触达与回复反馈闭环尚未由此实现。历史调度周期、外部工具及发送效果需在目标环境单独验收。
+
 **Goal:** 让 MindKernel 从被动响应变成主动出击，三类行动（ask_human / propose_task / drive_conversation）真实触发外部行为。
 
 **Architecture:**

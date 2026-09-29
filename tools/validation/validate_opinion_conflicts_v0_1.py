@@ -31,7 +31,8 @@ def main():
     mi.init_db(c)
     mi.cmd_reindex(c, workspace=ws, incremental=True, retry_failures=True, max_retries=3)
 
-    out = mi.cmd_reflect(c, since_days=30, workspace=ws, writeback=False, max_per_entity=8, max_opinions=50)
+    # This fixed historical fixture tests clustering, not a moving time window.
+    out = mi.cmd_reflect(c, since_days=None, workspace=ws, writeback=False, max_per_entity=8, max_opinions=50)
     groups = out.get("opinion_conflict_groups", [])
     conflicts = [g for g in groups if g.get("has_conflict")]
 

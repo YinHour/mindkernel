@@ -2,6 +2,8 @@
 
 _Last updated: 2026-05-10 22:30 (Asia/Shanghai)_
 
+> 文档口径校正（2026-09-17）：上方时间及下方巡检均为历史开发/部署记录，本次仅核对文档与源码，未重新验收运行环境。历史“零错误运行”结论与同日 `daemon_audit` 异常记录存在矛盾，不可作为业务健康证明；进程存活、业务错误、队列推进和端到端成功应分别核验。错误记录标记为 `healed` 也不等于修复已加载或故障不再复现。
+
 ## 2026-05-10 维护 Sprint（已完成）
 
 - [x] A1: 归档 M1-dreaming 核心模块（dreaming_store/worker/scheduler/state/preprocessor/prompt，6文件 1445行）
@@ -19,22 +21,23 @@ _Last updated: 2026-05-10 22:30 (Asia/Shanghai)_
 
 ---
 
-## 2026-05-10 M2 行动分发 Sprint（进行中）
+## 2026-05-10 M2 行动分发 Sprint（里程碑已勾选，运行效果需独立验收）
 
-### 完整架构
+### 当前分发路径
 ```
 Generator(每30min) → dreaming_entries → Dispatcher(每日02:00) → active_push_buffer
                                                                     ↓
-                                        Telegram Sender(每15min) ← ask_human
-                                        Task Queue(JSONL)          ← propose_task
-                                        (drive_conversation待后续)) ← drive_conversation
+                                        Telegram Sender(每15min) ← ask_human / drive_conversation / 任务提示
+Dispatcher → propose_task → Things 3 CLI（失败时写入 JSONL task queue）
 ```
+
+上述周期来自历史部署记录，需在目标机器检查 launchd 配置。`drive_conversation` 当前将开场白写入 buffer 后交给 Telegram Sender 发送；OpenClaw session 主动对话及用户回复反馈闭环尚不能据此判定完成。`propose_task` 降级入队也不代表 Things 3 任务已创建。
 
 ### 里程碑
 - [x] M2-1: 修复 plist 使用 venv python（2026-05-10 23:40）
 - [x] M2-2: dreaming_generator.py — 每30min LLM 生成带 triggered_actions 的洞察（2026-05-10 23:46）
 - [x] M2-3: propose_task → Things 3 CLI（含 Things 3 不可用时 JSONL task queue fallback）（2026-05-10 23:54）
-- [x] M2-4: drive_conversation → 已通过现有 Telegram Sender 覆盖（opening_line 作为 text 发送）（2026-05-10 23:55）
+- [x] M2-4: drive_conversation → Telegram 触达路径（opening_line 作为 text 发送；未实现原计划中的 OpenClaw session 入口）（2026-05-10 23:55）
 - [x] M2-5: 幂等去重（buffer + task queue 双层 dedup，task queue 从 29→5 条）（2026-05-10 23:55）
 - [x] M2-6: Dispatcher daemon plist（每日 02:00 via launchd，已加载运行）（2026-05-10 23:40）
 

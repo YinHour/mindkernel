@@ -2,6 +2,8 @@
 
 > 本文档描述如何通过 MCP（Model Context Protocol）将 MindKernel 的记忆能力接入 OpenClaw Agent。
 
+> 状态说明（2026-09-17）：下方接入表为历史部署记录，不代表当前机器已安装或运行。2026-05-10 的 `TODO.md` 另记录经验卡片已接入 active push buffer；实际展示与送达仍需端到端验证。做梦机制的 `drive_conversation` 当前通过 Telegram Sender 触达，不等同于向 OpenClaw session 发起对话。
+
 ## 架构概览
 
 ```
@@ -36,7 +38,7 @@
               data/mindkernel_v0_1.sqlite
 ```
 
-## 接入进度
+## 历史接入进度（结合后续开发记录）
 
 | 组件 | 状态 | 说明 |
 |------|------|------|
@@ -48,7 +50,7 @@
 | **Daemon 对接** | ✅ 完成 | `openclaw_event_adapter.py` + daemon `--feature-flag on` |
 | **launchd 自启** | ✅ 完成 | 3个 plist 已加载 |
 | **Reflect Worker** | ✅ 完成 | scheduler queue → experience 生成 |
-| 写回策略 | 🔲 待办 | 经验卡片写回 OpenClaw 对话 |
+| 经验卡片推送 | 已有后续实现记录 | 2026-05-10：`scan_experience_cards` 接入 active_push_worker；对话展示与送达需实测 |
 
 ## 快速验证
 
@@ -69,7 +71,7 @@ mcporter call mindkernel.mindkernel_retain \
 mcporter call mindkernel.mindkernel_recall table="memory_items" limit=1
 ```
 
-## 记忆适配层设计（待实现）
+## 记忆适配层设计（设计背景；接入状态见上表）
 
 ### 触发时机
 
@@ -111,12 +113,12 @@ mcporter call mindkernel.mindkernel_retain
 MindKernel SQLite 写入
 ```
 
-## 下一步
+## 后续验证
 
-1. **记忆适配层**：写一个 OpenClaw skill（`mindkernel-memory-adapter`），在每次对话后做候选评估
-2. **Daemon 协同**：复用 MindKernel 的 `memory_observer_daemon` 对齐观察 OpenClaw 的对话流
-3. **经验卡片**：用户确认某段记忆后，触发 `reflect` 生成 Experience 卡片
+1. **记忆适配层**：验证真实对话的候选评估、retain 写入与来源引用。
+2. **Daemon 协同**：验证对话事件进入队列后，worker 实际消费并产生预期对象。
+3. **经验卡片**：验证 reflect 生成、推送入队、用户实际收到及反馈关联，分别记录各步结果。
 
 ---
 
-> 文档更新时间：2026-03-18
+> 原始集成记录：2026-03-18；文档口径校正：2026-09-17（未重新验收部署）。
