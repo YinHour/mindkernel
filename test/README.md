@@ -14,6 +14,8 @@ python3 -m unittest discover -s test -p "test_*.py" -v
 - `test_daemon_json_output_v0_2.py`：启动诊断不污染标准输出 JSON。
 - `test_codex_session_reader_v0_1.py`：限定任务读取、来源、去重、异常输入和结构化回复。
 - `test_context_probe_v0_1.py`：离线情境组装的合成边界（包括重复 ID、时效与复核期限），不含真实用户数据。
+- `test_context_source_adapter_v0_1.py`：读取结果与人工标注的来源关联、说话者和时间校验、文档内容校验及可重复组装；使用公开合成数据。
+- `test_context_revision_selection_v0_1.py`：字段重新复核、补充与替代、相关证据选择、冲突及容量失败；执行公开合成边界。
 
 - `test_reflect_gate_v0_1.py`
   - Agent-first 风险分流策略（low/medium/high + hard rules）

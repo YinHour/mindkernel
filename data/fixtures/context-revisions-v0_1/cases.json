@@ -1,0 +1,502 @@
+{
+  "schema_version": "mindkernel.revision-acceptance-cases/v0.1",
+  "synthetic": true,
+  "status": "expectations_only_no_selector_implementation",
+  "default_history_cap": 4,
+  "model_calls": 0,
+  "events": [
+    {
+      "id": "E0",
+      "scope": {
+        "project": "SyntheticNotebook",
+        "task": null
+      },
+      "authority": "user_explicit",
+      "created_at": "2030-01-07T08:00:00Z",
+      "available_at": "2030-01-07T08:00:00Z",
+      "text": "本项目每周投入两小时。",
+      "claims": {
+        "weekly_budget": "2h/week"
+      }
+    },
+    {
+      "id": "E1",
+      "scope": {
+        "project": "SyntheticNotebook",
+        "task": null
+      },
+      "authority": "user_explicit",
+      "created_at": "2030-01-07T08:10:00Z",
+      "available_at": "2030-01-07T08:10:00Z",
+      "text": "周二10:00安排规划，周四15:00安排复盘。",
+      "claims": {
+        "reminder.exact_schedule": "Tue10:00/Thu15:00",
+        "workflow.activities": [
+          "planning",
+          "review"
+        ]
+      }
+    },
+    {
+      "id": "E2",
+      "scope": {
+        "project": "SyntheticNotebook",
+        "task": null
+      },
+      "authority": "user_explicit",
+      "created_at": "2030-01-07T08:20:00Z",
+      "available_at": "2030-01-07T08:20:00Z",
+      "text": "请根据我的工作习惯重新选择提醒时间。",
+      "claims": {
+        "reminder.timing_policy": "derive_from_observed_activity"
+      }
+    },
+    {
+      "id": "E3",
+      "scope": {
+        "project": "SyntheticNotebook",
+        "task": null
+      },
+      "authority": "user_explicit",
+      "created_at": "2030-01-07T08:30:00Z",
+      "available_at": "2030-01-07T08:30:00Z",
+      "text": "每天给一份约150字的进度简报。",
+      "claims": {
+        "progress_report.frequency": "daily",
+        "progress_report.length": "about150characters"
+      }
+    },
+    {
+      "id": "E4",
+      "scope": {
+        "project": "SyntheticNotebook",
+        "task": null
+      },
+      "authority": "user_explicit",
+      "created_at": "2030-01-07T08:40:00Z",
+      "available_at": "2030-01-07T08:40:00Z",
+      "text": "明确改为每天14:00发进度简报。",
+      "claims": {
+        "progress_report.exact_time": "14:00"
+      }
+    },
+    {
+      "id": "E5",
+      "scope": {
+        "project": "SyntheticNotebook",
+        "task": null
+      },
+      "authority": "user_explicit",
+      "created_at": "2030-01-07T08:50:00Z",
+      "available_at": "2030-01-07T08:50:00Z",
+      "text": "明确改为每天16:00发进度简报。",
+      "claims": {
+        "progress_report.exact_time": "16:00"
+      }
+    },
+    {
+      "id": "E6",
+      "scope": {
+        "project": "SyntheticNotebook",
+        "task": null
+      },
+      "authority": "user_explicit",
+      "created_at": "2030-01-07T08:50:00Z",
+      "available_at": "2030-01-07T08:50:00Z",
+      "text": "明确改为每天18:00发进度简报。",
+      "claims": {
+        "progress_report.exact_time": "18:00"
+      }
+    },
+    {
+      "id": "A1",
+      "scope": {
+        "project": "SyntheticNotebook",
+        "task": null
+      },
+      "authority": "assistant_inference",
+      "created_at": "2030-01-07T08:25:00Z",
+      "available_at": "2030-01-07T08:25:00Z",
+      "text": "我建议取消规划和复盘。",
+      "claims": {
+        "workflow.activities": []
+      }
+    },
+    {
+      "id": "O1",
+      "scope": {
+        "project": "OtherSyntheticProject",
+        "task": null
+      },
+      "authority": "user_explicit",
+      "created_at": "2030-01-07T08:25:00Z",
+      "available_at": "2030-01-07T08:25:00Z",
+      "text": "这个项目取消所有提醒。",
+      "claims": {
+        "reminder.enabled": false
+      }
+    },
+    {
+      "id": "T1",
+      "scope": {
+        "project": "SyntheticNotebook",
+        "task": "other-task"
+      },
+      "authority": "user_explicit",
+      "created_at": "2030-01-07T08:25:00Z",
+      "available_at": "2030-01-07T08:25:00Z",
+      "text": "仅当前任务取消提醒。",
+      "claims": {
+        "reminder.enabled": false
+      }
+    }
+  ],
+  "relations": [
+    {
+      "id": "R1",
+      "type": "reopen_for_review",
+      "older": "E1",
+      "newer": "E2",
+      "field": "reminder.exact_schedule",
+      "scope": {
+        "project": "SyntheticNotebook",
+        "task": null
+      }
+    },
+    {
+      "id": "R2",
+      "type": "supplement",
+      "older": "E1",
+      "newer": "E3",
+      "field": "progress_report.frequency",
+      "scope": {
+        "project": "SyntheticNotebook",
+        "task": null
+      }
+    },
+    {
+      "id": "R3",
+      "type": "replace_field",
+      "older": "E4",
+      "newer": "E5",
+      "field": "progress_report.exact_time",
+      "scope": {
+        "project": "SyntheticNotebook",
+        "task": null
+      }
+    }
+  ],
+  "cases": [
+    {
+      "id": "S01",
+      "title": "较新表达尚不可见",
+      "event_ids": [
+        "E0",
+        "E1",
+        "E2",
+        "E3"
+      ],
+      "relation_ids": [
+        "R1",
+        "R2"
+      ],
+      "as_of": "2030-01-07T08:15:00Z",
+      "project": "SyntheticNotebook",
+      "task": null,
+      "expected": {
+        "status": "ready",
+        "current_evidence": [
+          "E0",
+          "E1"
+        ],
+        "must_not_use": [
+          "E2",
+          "E3"
+        ],
+        "exact_schedule_state": "confirmed_at_this_cutoff"
+      }
+    },
+    {
+      "id": "S02",
+      "title": "重新选择时间但没有给新时刻",
+      "event_ids": [
+        "E0",
+        "E1",
+        "E2"
+      ],
+      "relation_ids": [
+        "R1"
+      ],
+      "as_of": "2030-01-07T08:25:00Z",
+      "project": "SyntheticNotebook",
+      "task": null,
+      "expected": {
+        "status": "ready",
+        "exact_schedule_state": "needs_recheck",
+        "required_evidence": [
+          "E1",
+          "E2"
+        ],
+        "must_not_infer": [
+          "new_exact_time",
+          "explicit_cancellation",
+          "weekly_workflow_cancelled"
+        ],
+        "requires_immediate_reply": false
+      }
+    },
+    {
+      "id": "S03",
+      "title": "报告频率新增不删除工作流程",
+      "event_ids": [
+        "E0",
+        "E1",
+        "E2",
+        "E3"
+      ],
+      "relation_ids": [
+        "R1",
+        "R2"
+      ],
+      "as_of": "2030-01-07T08:35:00Z",
+      "project": "SyntheticNotebook",
+      "task": null,
+      "expected": {
+        "status": "ready",
+        "selected_history": [
+          "E0",
+          "E1",
+          "E2",
+          "E3"
+        ],
+        "exact_schedule_state": "needs_recheck",
+        "current_values": {
+          "weekly_budget": "2h/week",
+          "progress_report.frequency": "daily",
+          "progress_report.length": "about150characters"
+        },
+        "workflow_state": "historical_request_without_explicit_cancellation",
+        "must_not_infer": [
+          "configured_schedule",
+          "daily_extra_work",
+          "weekly_workflow_cancelled"
+        ]
+      }
+    },
+    {
+      "id": "S04",
+      "title": "历史上限不足以保留相关证据及必选预算",
+      "event_ids": [
+        "E0",
+        "E1",
+        "E2",
+        "E3"
+      ],
+      "relation_ids": [
+        "R1",
+        "R2"
+      ],
+      "as_of": "2030-01-07T08:35:00Z",
+      "project": "SyntheticNotebook",
+      "task": null,
+      "expected": {
+        "status": "budget_incomplete",
+        "must_not_emit": "old_exact_schedule_as_current",
+        "omission_reason_required": true,
+        "must_not_drop_constraint": "E0"
+      },
+      "max_history_records": 3,
+      "required_history": [
+        "E0",
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "S05",
+      "title": "较新表达已发生但尚不可获得",
+      "event_ids": [
+        "E0",
+        "E1",
+        "E2"
+      ],
+      "relation_ids": [
+        "R1"
+      ],
+      "as_of": "2030-01-07T08:25:00Z",
+      "project": "SyntheticNotebook",
+      "task": null,
+      "expected": {
+        "status": "ready",
+        "current_evidence": [
+          "E0",
+          "E1"
+        ],
+        "must_not_use": [
+          "E2"
+        ],
+        "exact_schedule_state": "confirmed_at_this_cutoff"
+      },
+      "event_overrides": {
+        "E2": {
+          "available_at": "2030-01-07T09:00:00Z"
+        }
+      }
+    },
+    {
+      "id": "S06",
+      "title": "助手建议不能覆盖人类要求",
+      "event_ids": [
+        "E0",
+        "E1",
+        "A1"
+      ],
+      "relation_ids": [],
+      "as_of": "2030-01-07T08:30:00Z",
+      "project": "SyntheticNotebook",
+      "task": null,
+      "expected": {
+        "status": "ready",
+        "exact_schedule_state": "confirmed_at_this_cutoff",
+        "must_not_infer": [
+          "weekly_workflow_cancelled"
+        ],
+        "assistant_suggestion_state": "needs_recheck"
+      }
+    },
+    {
+      "id": "S07",
+      "title": "其他项目或任务不取消本范围安排",
+      "event_ids": [
+        "E0",
+        "E1",
+        "O1",
+        "T1"
+      ],
+      "relation_ids": [],
+      "as_of": "2030-01-07T08:30:00Z",
+      "project": "SyntheticNotebook",
+      "task": null,
+      "expected": {
+        "status": "ready",
+        "current_evidence": [
+          "E0",
+          "E1"
+        ],
+        "outside_scope": [
+          "O1",
+          "T1"
+        ]
+      }
+    },
+    {
+      "id": "S08",
+      "title": "明确替代仅作用于相同字段",
+      "event_ids": [
+        "E1",
+        "E3",
+        "E4",
+        "E5"
+      ],
+      "relation_ids": [
+        "R2",
+        "R3"
+      ],
+      "as_of": "2030-01-07T08:55:00Z",
+      "project": "SyntheticNotebook",
+      "task": null,
+      "expected": {
+        "status": "ready",
+        "current_values": {
+          "progress_report.exact_time": "16:00",
+          "progress_report.frequency": "daily"
+        },
+        "historical_only": [
+          "E4"
+        ],
+        "must_not_infer": [
+          "weekly_workflow_cancelled"
+        ],
+        "workflow_state": "historical_request_without_explicit_cancellation"
+      },
+      "max_history_records": 4
+    },
+    {
+      "id": "S09",
+      "title": "同一时刻出现不兼容值",
+      "event_ids": [
+        "E0",
+        "E3",
+        "E5",
+        "E6"
+      ],
+      "relation_ids": [],
+      "as_of": "2030-01-07T08:55:00Z",
+      "project": "SyntheticNotebook",
+      "task": null,
+      "expected": {
+        "status": "conflict",
+        "conflict_evidence": [
+          "E5",
+          "E6"
+        ],
+        "field": "progress_report.exact_time",
+        "must_not_choose_by": "id_or_file_order"
+      }
+    },
+    {
+      "id": "S10",
+      "title": "修订目标缺少来源",
+      "event_ids": [
+        "E0",
+        "E2"
+      ],
+      "relation_ids": [
+        "R1"
+      ],
+      "as_of": "2030-01-07T08:25:00Z",
+      "project": "SyntheticNotebook",
+      "task": null,
+      "expected": {
+        "status": "invalid_relation",
+        "missing_evidence": [
+          "E1"
+        ],
+        "model_ready": false
+      }
+    },
+    {
+      "id": "S11",
+      "title": "同一语义不随输入排列改变",
+      "event_ids": [
+        "E3",
+        "E2",
+        "E1",
+        "E0"
+      ],
+      "relation_ids": [
+        "R2",
+        "R1"
+      ],
+      "as_of": "2030-01-07T08:35:00Z",
+      "project": "SyntheticNotebook",
+      "task": null,
+      "expected": {
+        "same_semantics_as": "S03",
+        "source_order": [
+          "E0",
+          "E1",
+          "E2",
+          "E3"
+        ]
+      }
+    }
+  ],
+  "limits": [
+    "关系和字段由人工提供，不测自动语义发现。",
+    "这是待实现的验收数据，文件有效不等于选择器通过这些案例。",
+    "历史无取消证据不等于工作流程已配置或必须继续发送独立提醒。"
+  ],
+  "current_action": "draft_project_next_step_independent_of_reminder_clock"
+}
