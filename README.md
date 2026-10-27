@@ -29,7 +29,7 @@ Memory → Experience → Cognition → Decision → Action
 
 检索入口目前各有边界：Markdown 索引使用 FTS5；REST `/api/v1/recall` 在最近 `top_k × 10` 条记录中做关键词子串匹配；MCP `mindkernel_recall` 按表列出近期记录。以上入口尚未接入向量混合检索。
 
-2026-09 的个体协作智能实验采用“推进 → review → 更新”流程；开始或恢复工作先读[推进记录](docs/06-execution/iteration-log.md)和[瓶颈记录](docs/06-execution/bottlenecks.md)。目前已完成[Codex 单任务只读读取器](docs/04-prototypes/codex-session-reader-v0.1.md)、首批开发案例与隔离普通记忆基线，已形成[协作情境约定和离线规则探测](docs/04-prototypes/collaboration-context-v0.1.md)，下一步连接标注入口并比较模型回答。数据与回放通过不代表持续学习有效，也未启用后台采集。
+2026-09 的个体协作智能实验采用“推进 → review → 更新”流程；开始或恢复工作先读[推进记录](docs/06-execution/iteration-log.md)和[瓶颈记录](docs/06-execution/bottlenecks.md)。目前已完成[Codex 单任务只读读取器](docs/04-prototypes/codex-session-reader-v0.1.md)、首批开发案例与隔离普通记忆基线，已形成[协作情境约定、离线规则与来源适配](docs/04-prototypes/collaboration-context-v0.1.md)，同条件开发对照已发现约束覆盖改善，[字段修订检查层](docs/04-prototypes/context-revision-selection-v0.1.md)已通过工程验证，下一步复测模型是否正确处理旧安排及提问取舍。数据与回放通过不代表持续学习有效，也未启用后台采集。
 
 ## 快速开始
 
