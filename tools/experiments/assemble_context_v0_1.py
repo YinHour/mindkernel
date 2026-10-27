@@ -46,8 +46,11 @@ def _user_source(source, message, expected_thread_id):
     quote = source.get("quote")
     if not isinstance(carrier, str) or not isinstance(quote, str) or not quote.strip() or quote.strip() != carrier.strip():
         return "quote_mismatch", None
-    return None, {"source_written_at": message["recorded_at"],
-                  "content_sha256": hashlib.sha256(carrier.encode("utf-8")).hexdigest()}
+    try:
+        digest = hashlib.sha256(carrier.encode("utf-8")).hexdigest()
+    except UnicodeEncodeError:
+        return "source_invalid_utf8", None
+    return None, {"source_written_at": message["recorded_at"], "content_sha256": digest}
 
 
 def _observation_source(source, observation):
@@ -63,7 +66,10 @@ def _observation_source(source, observation):
     content = observation.get("content")
     if not isinstance(content, str):
         return "observation_payload_missing", None
-    digest = hashlib.sha256(content.encode("utf-8")).hexdigest()
+    try:
+        digest = hashlib.sha256(content.encode("utf-8")).hexdigest()
+    except UnicodeEncodeError:
+        return "source_invalid_utf8", None
     if digest != observation.get("sha256") or digest != source.get("sha256", source.get("container_sha256")):
         return "observation_hash_mismatch", None
     return None, {"source_written_at": None, "content_sha256": digest}

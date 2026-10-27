@@ -48,6 +48,8 @@ def _events(events, cutoff, project, task):
     for event in events:
         if not isinstance(event, dict):
             raise ValueError('event must be an object')
+        if 'recheck_after' in event:
+            raise ValueError('recheck_after requires explicit revision projection; unsupported event field')
         mid = event.get('id')
         if not isinstance(mid, str) or not mid.strip() or mid in index:
             raise ValueError('event IDs must be nonempty and unique')
@@ -87,7 +89,7 @@ def _events(events, cutoff, project, task):
     return index, known, active, excluded
 
 
-def _relations(relations, index, known, project, task):
+def _relations(relations, index, cutoff, project, task):
     applicable, errors, seen = [], [], set()
     for rel in relations:
         if not isinstance(rel, dict):
@@ -107,17 +109,19 @@ def _relations(relations, index, known, project, task):
         if not isinstance(newer, str) or newer not in index:
             errors.append({'id':rid, 'reason':'newer_source_missing'})
             continue
-        if newer not in known:
+        new = index[newer]
+        if (max(_time(new['created_at']), _time(new['available_at'])) > cutoff
+                or _time(new.get('valid_from', new['created_at'])) > cutoff):
             continue
-        new = known[newer]
         if new['authority'] != 'user_explicit':
             continue
         try:
-            old = known.get(rel.get('older'))
+            old = index.get(rel.get('older'))
             field = rel.get('field')
             kind = rel.get('type')
             valid = (old is not None and old['authority'] == 'user_explicit'
                      and old['scope'] == new['scope'] == rel['scope']
+                     and max(_time(old['created_at']), _time(old['available_at'])) <= cutoff
                      and _time(old['created_at']) < _time(new['created_at'])
                      and isinstance(field, str) and bool(field.strip()))
             if valid:
@@ -160,6 +164,7 @@ def _field_states(known, active, relations):
         values = {_encoded(known[mid]['claims'][field]) for mid in winners}
         status = 'conflict' if len(values) > 1 else 'current'
         reopens = [r for r in relations if r['type'] == 'reopen_for_review'
+                   and r['older'] in winners
                    and r['field'] == field and _scope(r['scope']) == scope
                    and _time(known[r['newer']]['created_at']) >= newest]
         evidence = sorted(set(winners + [r['newer'] for r in reopens]))
@@ -201,12 +206,18 @@ def select_revision_context(events, relations, *, as_of, project, task=None,
         if not isinstance(ids, (list, tuple)) or any(not isinstance(i, str) or not i.strip() for i in ids):
             raise ValueError('seed/required IDs must be sequences of nonempty strings')
     index, known, active, excluded = _events(events, cutoff, project, task)
-    rels, errors = _relations(relations, index, known, project, task)
+    rels, errors = _relations(relations, index, cutoff, project, task)
     result = dict(status='ready', model_input=None, selected_ids=[],
                   excluded=sorted(excluded, key=lambda e:e['id']), omissions=[], errors=errors)
     if errors:
         result['status'] = 'invalid_relation'
         return result
+    # A visible planned expression may be revised before its start date. Keep
+    # that validated target as historical evidence, without activating it or
+    # allowing its own not-yet-effective revisions to apply during validation.
+    for rel in rels:
+        known[rel['older']] = index[rel['older']]
+    result['excluded'] = [e for e in result['excluded'] if e['id'] not in known]
     unavailable = set(required_ids) - active
     if unavailable:
         result.update(status='required_unavailable', errors=[{'id':i,'reason':'required_not_available'} for i in sorted(unavailable)])

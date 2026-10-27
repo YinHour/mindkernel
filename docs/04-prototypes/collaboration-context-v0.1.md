@@ -102,6 +102,7 @@ result = assemble_from_sources(
 - 用户记录的 `source.created_at` 必须对应消息创建时间；`available_at` 对应创建时间和源写入时间的较晚者，兼容毫秒写入时间的截断。原始时间未知时排除；人工标注时间独立保留。
 - 非用户来源使用 `observations` 列表，每条含 `event_id`、`ref`、`authority`、`created_at`、`available_at`、`content` 和 `sha256`。`content` 是显式传入的完整 UTF-8 文本容器；其 SHA-256 必须同时匹配 observation 和原标注的 `source.sha256`（历史容器也可用 `container_sha256`）。来源元数据与时间须一致。适配器不跟随 `ref` 打开文件。
 - 引用无法对应、说话者不符、未知时间或内容校验不符的记录进入 `source_excluded`，并加入情境的 `excluded`；无效导出、任务白名单不符、重复消息／观察／标注 ID 抛出 `ValueError`，不猜测选取哪个来源。
+- 无法编码为 UTF-8 的用户原文或观察容器以 `source_invalid_utf8` 排除；单个坏来源不终止其余记录的组装。
 
 输出包含 `context`（既有五组）、`bindings`（通过来源核对的审计映射）、`source_excluded` 和快照元数据。`bindings` 只说明来源核对通过，可能包含晚于案例截止点的来源；它不是可用事实集合，不应直接送入模型。后续模型输入须从 `context` 的适用分组构造，并将待复核与冲突明确标注；审计项和排除项不作为事实。
 

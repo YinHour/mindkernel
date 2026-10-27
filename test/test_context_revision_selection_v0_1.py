@@ -125,6 +125,12 @@ class RevisionSelectionTests(unittest.TestCase):
         r = self.select(['E0', 'E1', 'E2'], ['R1'], task='child')
         self.assertEqual(r['status'], 'invalid_relation')
 
+    def test_visible_newer_source_must_match_the_relation_scope(self):
+        self.events['E2']['scope'] = {'project':'OtherSyntheticProject','task':None}
+        r = self.select(['E1','E2'], ['R1'], seed_ids=['E1'])
+        self.assertEqual(r['status'], 'invalid_relation')
+        self.assertIsNone(r['model_input'])
+
     def test_non_user_relation_cannot_invalidate_explicit_request(self):
         self.events['E2']['authority'] = 'assistant_inference'
         r = self.select(['E0', 'E1', 'E2'], ['R1'])
@@ -190,6 +196,32 @@ class RevisionSelectionTests(unittest.TestCase):
         self.assertEqual(r['selected_ids'],['E0','E1'])
         self.assertEqual(self.field(r,'E1','reminder.exact_schedule')['status'],'current')
 
+    def test_current_replacement_can_revise_a_known_planned_expression(self):
+        self.events['E4']['valid_from'] = '2030-01-08T00:00:00Z'
+        self.events['E4']['claims']['planned_workflow'] = 'weekly'
+        for cutoff, workflow_status in [('2030-01-07T09:00:00Z', 'historical'),
+                                         ('2030-01-08T09:00:00Z', 'current')]:
+            with self.subTest(cutoff=cutoff):
+                r = self.select(['E4','E5'], ['R3'], seed_ids=['E5'], as_of=cutoff)
+                self.assertEqual(r['status'], 'ready')
+                self.assertEqual(r['selected_ids'], ['E4','E5'])
+                self.assertEqual(self.field(r,'E4','progress_report.exact_time')['status'],'historical')
+                self.assertEqual(self.field(r,'E5','progress_report.exact_time')['status'],'current')
+                self.assertEqual(self.field(r,'E4','planned_workflow')['status'],workflow_status)
+                self.assertNotIn('E4', [e['id'] for e in r['excluded']])
+        r = self.select(['E4','E5'], ['R3'], seed_ids=['E5'], max_history_records=1)
+        self.assertEqual(r['status'], 'budget_incomplete')
+        self.assertIsNone(r['model_input'])
+        r = self.select(['E4','E5'], ['R3'], seed_ids=['E5'], required_ids=['E4'])
+        self.assertEqual(r['status'], 'required_unavailable')
+
+    def test_planned_replacement_target_still_requires_visible_source(self):
+        self.events['E4'].update(valid_from='2030-01-08T00:00:00Z',
+                                 available_at='2030-01-08T00:00:00Z')
+        r = self.select(['E4','E5'], ['R3'], seed_ids=['E5'])
+        self.assertEqual(r['status'], 'invalid_relation')
+        self.assertIsNone(r['model_input'])
+
     def test_irrelevant_relation_with_no_sources_does_not_block_request(self):
         self.relations['R1'].update(older='absent-old', newer='absent-new',
                                    scope={'project':'OtherSyntheticProject','task':None})
@@ -211,6 +243,22 @@ class RevisionSelectionTests(unittest.TestCase):
         for value in [[], {}, None]:
             with self.subTest(value=value), self.assertRaises(ValueError):
                 self.select(['E0'], overrides={'E0':{'authority':value}})
+
+    def test_reopening_a_retired_value_does_not_downgrade_its_replacement(self):
+        self.events['E3'].update(created_at='2030-01-07T08:58:00Z',
+                                 available_at='2030-01-07T08:58:00Z',
+                                 claims={'timing_policy':'recheck old choice'})
+        self.relations['R1'].update(older='E4', newer='E3', field='progress_report.exact_time')
+        r = self.select(['E4','E5','E3'], ['R3','R1'], seed_ids=['E5'])
+        self.assertEqual(r['status'], 'ready')
+        self.assertEqual(self.field(r,'E4','progress_report.exact_time')['status'],'historical')
+        self.assertEqual(self.field(r,'E5','progress_report.exact_time')['status'],'current')
+        self.assertEqual(self.field(r,'E5','progress_report.exact_time')['evidence_ids'],['E5'])
+
+    def test_unsupported_recheck_deadline_cannot_silently_produce_current_claims(self):
+        for value in [None, '2030-01-07T08:00:00Z', '2030-01-08T00:00:00Z']:
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                self.select(['E0'], overrides={'E0':{'recheck_after':value}})
 
 
 if __name__ == '__main__':

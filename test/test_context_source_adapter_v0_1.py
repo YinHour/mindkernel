@@ -121,6 +121,16 @@ class ContextSourceAdapterTests(unittest.TestCase):
         observation["content"] = "changed content"
         self.excluded("observation_hash_mismatch", observations=[observation])
 
+    def test_unencodable_user_source_is_excluded_without_aborting_assembly(self):
+        self.report["messages"][0]["text"] = "broken\ud800"
+        self.record["source"]["quote"] = "broken\ud800"
+        self.excluded("source_invalid_utf8")
+
+    def test_unencodable_observation_is_excluded_without_aborting_assembly(self):
+        observation = self.observation()
+        observation["content"] = "broken\ud800"
+        self.excluded("source_invalid_utf8", observations=[observation])
+
     def test_saved_annotation_hash_cannot_be_replaced_by_a_new_hash(self):
         observation = self.observation()
         observation["content"] = "changed content"
